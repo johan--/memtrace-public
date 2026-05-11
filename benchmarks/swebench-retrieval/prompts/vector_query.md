@@ -1,6 +1,7 @@
-# Vector row — frozen retrieval configuration
+# Vector row (variant A — Memtrace's default embedder) — frozen retrieval configuration
 
 **Status**: locked at pre-registration. Any change requires bumping the round version.
+**Variant identity**: this is variant A. Variant B is in `vector_query_coderankembed.md`. The two share every parameter except the embedder model.
 
 ## Indexing
 
@@ -9,8 +10,12 @@
 | Chunk size | 500 lines, non-overlapping |
 | File filter (include) | source code only — extensions matching the repo's primary languages per Memtrace's language scanner |
 | File filter (exclude) | `tests/`, `test/`, `docs/`, `examples/`, `.git/`, `node_modules/`, `vendor/`, `*.min.js` |
-| Embedder model | **TBD — filled in at index time from `embed_diag`. Must be byte-identical to the model Memtrace uses for the Memtrace row.** |
-| Embedding dimension | TBD — captured from `embed_diag` |
+| **Embedder model** | **`jinaai/jina-embeddings-v2-base-code`** — same model Memtrace uses internally for the semantic leg of its hybrid retrieval |
+| **Source** | https://huggingface.co/jinaai/jina-embeddings-v2-base-code (Apache-2.0) |
+| **Parameters** | 161M (BERT-base architecture, instruction-following) |
+| **Embedding dimension** | 768 |
+| **Inference** | local via `sentence-transformers >= 3.0`; no API spend on embedding |
+| **Pin** | HuggingFace revision SHA captured at run start in `run_meta.json` |
 | Distance metric | cosine similarity |
 | Store | flat in-memory index (numpy or hnswlib, configurable; reported in `results/vector/run_meta.json`) |
 

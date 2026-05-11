@@ -2,3 +2,7 @@ pandas==2.2.3
 pyarrow==18.1.0
 numpy>=2.0,<3.0
 requests==2.32.3
+# Phase 2 runners
+sentence-transformers>=3.0,<4.0
+tiktoken>=0.7
+anthropic>=0.40
