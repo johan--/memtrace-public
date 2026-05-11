@@ -68,14 +68,24 @@ Repos missing from n=100 (`mwaskom/seaborn`, `pallets/flask`, `psf/requests`) co
 
 ---
 
-## 5. The three rows — frozen specs
+## 5. The four rows — frozen specs
 
-### Vector row
+> **Amendment** (post-`7a5f49b`, pre-results): the Vector row now has two variants. Original `vector_query.md` is variant A (Memtrace's default embedder); new `vector_query_coderankembed.md` is variant B (`nomic-ai/CodeRankEmbed`, public SOTA). Both report symmetrically. This expansion is declared before any retrieval has been run; the per-variant prompt files are byte-identical except for the embedder, query-prefix, and dimension fields.
+
+### Vector row — variant A (default embedder)
 - **Indexer**: chunk every source file into 500-line non-overlapping chunks at index time. Skip binary files. Skip `tests/`, `docs/`, `node_modules/` (configurable; documented).
 - **Embedder**: Memtrace's default embedder (model + dim captured in `prompts/vector_query.md` after first run via `embed_diag`).
 - **Query**: `problem_statement` text, embedded with the same model.
 - **Retrieval**: cosine top-K such that cumulative chunk tokens ≤ 27,000 (cl100k_base), matching Princeton's BM25-27K budget.
 - **File set**: union of chunks' source files.
+
+### Vector row — variant B (CodeRankEmbed)
+- **Indexer**: identical to variant A (same chunks, same exclusions).
+- **Embedder**: `nomic-ai/CodeRankEmbed` (137M, 768-dim, ICLR 2025). Run locally via `sentence-transformers`; no API spend on embedding.
+- **Query**: `problem_statement` prefixed with `"Represent this query for searching relevant code: "` per the paper.
+- **Retrieval**: same token budget as variant A.
+- **File set**: union of chunks' source files.
+- **Why**: pre-empts the "weak embedder" critique. The two variants share everything except the embedder model — direct ablation of embedding quality.
 
 ### Agentic row
 - **Harness**: Claude Code itself, headless mode.
@@ -94,7 +104,7 @@ Repos missing from n=100 (`mwaskom/seaborn`, `pallets/flask`, `psf/requests`) co
 - **File set**: the set of files cited by Memtrace tool calls and in the final answer.
 - **Symbol set**: the set of fully-qualified symbol names cited.
 
-**Parity**: all three rows receive the **same `problem_statement` text** with **no `hints_text`** (hints can contain solution leakage). All three are scored against the **same gold-file set** derived from `patch`. All three use the **same model and decoding params** for the LM-driven steps.
+**Parity**: all four rows (two Vector variants + Agentic + Memtrace) receive the **same `problem_statement` text** with **no `hints_text`** (hints can contain solution leakage). All are scored against the **same gold-file set** derived from `patch`. The two Vector variants share all parameters except the embedder. Agentic and Memtrace use the **same model and decoding params** for the LM-driven steps.
 
 ---
 
@@ -130,7 +140,7 @@ Repos missing from n=100 (`mwaskom/seaborn`, `pallets/flask`, `psf/requests`) co
 | Partial credit | Binary hit/miss per instance; mean recall reported separately; Wilson 95% CI on both |
 | Embedder advantage | Vector row uses **the same embedder Memtrace uses** — no embedding-quality confound |
 | Tool-set asymmetry | Agentic and Memtrace both capped at 30 turns, same model, same decode params |
-| Hints leakage | All three rows see `problem_statement` only, no `hints_text` |
+| Hints leakage | All four rows see `problem_statement` only, no `hints_text` |
 | Harness drift | swe-bench/SWE-bench commit SHA pinned at run time |
 | Cost asymmetry | Per-row tokens + dollars logged; vendor list price on a named date |
 

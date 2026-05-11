@@ -26,17 +26,18 @@ When the writeup is published, link the **git commit hash** that first added thi
 | File | What it is |
 |---|---|
 | `README.md` | this file — overview, status, cite-by path |
-| `01_methodology.md` | the round contract — task, dataset pins, sampling, metric, three-row specs, 14-point disclosure block, attacks pre-empted |
+| `01_methodology.md` | the round contract — task, dataset pins, sampling, metric, four-row specs (2 Vector variants + Agentic + Memtrace), 14-point disclosure block, attacks pre-empted |
 | `02_sampling.py` | reproducible stratified-random sampler (seed=42, numpy default_rng); deterministic across platforms |
 | `03_instances_25.csv` | headline sample — matches the slide's n=25 |
 | `04_instances_100.csv` | appendix sample — Wilson-CI defensible |
 | `05_repro.sh` | one-shot re-runner; `bash 05_repro.sh sample` regenerates CSVs from the pinned parquet |
 | `requirements.txt` | pinned Python deps (pandas, pyarrow, numpy, requests) |
 | `data/verified_500.parquet` | HuggingFace snapshot, sha256 below; **bit-identical pre-registration evidence** |
-| `prompts/vector_query.md` | frozen vector-row config (chunking, embedder, top-K policy) |
+| `prompts/vector_query.md` | Vector variant A — Memtrace's default embedder (frozen) |
+| `prompts/vector_query_coderankembed.md` | Vector variant B — `nomic-ai/CodeRankEmbed` SOTA code embedder (frozen) |
 | `prompts/agentic_system.md` | frozen Claude Code system prompt, tool list, turn limit |
 | `prompts/memtrace_query.md` | frozen Memtrace tool list + system prompt |
-| `results/{vector,agentic,memtrace}/` | empty until Phase 2 — per-row outputs land here |
+| `results/{vector-default,vector-coderankembed,agentic,memtrace}/` | empty until Phase 2 — per-row outputs land here |
 
 ---
 
@@ -65,6 +66,19 @@ Anyone re-running `bash 05_repro.sh sample` from a fresh clone reproduces these 
 - n=100 covers 9 of 12 repos; missing repos collectively account for 2.2% of Verified
 
 See `01_methodology.md` §3 for the full protocol.
+
+---
+
+## Rows being compared (4 total, after the CodeRankEmbed amendment)
+
+| Row | Retrieval mechanism | Embedder |
+|---|---|---|
+| `vector-default` | chunked-file vector retrieval | Memtrace's default code embedder |
+| `vector-coderankembed` | chunked-file vector retrieval | `nomic-ai/CodeRankEmbed` (SOTA public code embedder, ICLR 2025) |
+| `agentic` | Claude Code grep/glob/read loop, 30 turns | n/a |
+| `memtrace` | Memtrace AST-graph tool calls + LeanCTX, 30 turns | n/a |
+
+The two Vector variants exist to pre-empt the "you picked a weak embedder" critique — CodeRankEmbed is currently the strongest publicly available code embedder, so reporting both variants makes the Vector row a real ceiling rather than a strawman.
 
 ---
 
