@@ -30,7 +30,7 @@
   <img src="https://img.shields.io/badge/license-Proprietary%20EULA-E879F9?style=flat-square" alt="License"/>
   <img src="https://img.shields.io/badge/runtime-Rust-orange?style=flat-square&logo=rust" alt="Rust"/>
   <img src="https://img.shields.io/badge/MCP-native-00d4b8?style=flat-square" alt="MCP"/>
-  <img src="https://img.shields.io/badge/languages-16%2B-22d3ee?style=flat-square" alt="Languages"/>
+  <img src="https://img.shields.io/badge/languages-20%2B-22d3ee?style=flat-square" alt="Languages"/>
   <a href="https://discord.gg/gzedUSNbna"><img src="https://img.shields.io/badge/Discord-join-5865F2?style=flat-square&logo=discord&logoColor=white" alt="Discord" /></a>
   <img src="https://img.shields.io/badge/private%20beta-active-f59e0b?style=flat-square" alt="Private Beta"/>
 </p>
@@ -48,7 +48,7 @@ Each agent reads the same call graph, sees the same blast radius, inherits the s
 Agents see exactly what depends on what, and what changed when. No more *"I refactored a function and 14 tests broke that nobody saw."*
 
 ⚡ &nbsp; **Index a 50k-file repo in under 90 seconds.**
-Rust + Tree-sitter, $0 in API costs, 16 languages, fully local. Your code never leaves your machine.
+Rust + Tree-sitter, $0 in API costs, 20+ languages plus framework-aware scanners (Vapor, Lapis, Kong, GitHub Actions, Terraform, RLS policies, …), fully local. Your code never leaves your machine.
 
 🆕 &nbsp; **LeanCTX Native — compressed reads, smart trees, and a value ledger.**
 Four new compression modes on `get_source_window`, single-call directory maps, real-time token-savings dashboard, and an opt-in adaptive learner that beats the static table by ~14%. Full breakdown: [`docs/leanctx-native.md`](docs/leanctx-native.md). Available in v0.3.57+.
@@ -365,7 +365,17 @@ This typically only happens on machines where npm is configured to skip optional
 
 ## Languages
 
-Rust · Go · TypeScript · JavaScript · Python · Java · C · C++ · C# · Swift · Kotlin · Ruby · PHP · Dart · Scala · Perl — and more via Tree-sitter.
+**Programming:** Rust · Go · TypeScript · JavaScript · Python · Java · C · C++ · C# · Swift · Kotlin · Ruby · PHP · Dart · Scala · Perl · **Lua** — full AST: functions, classes, types, calls, complexity.
+
+**Infrastructure & config:** **YAML** · **HCL / Terraform** · **JSON** · **TOML** · **SQL** (including PostgreSQL `CREATE POLICY` for RLS, with cross-language edges from policies to Drizzle / Prisma / TS schema symbols).
+
+**Framework-aware scanners** on top of the AST layer:
+
+- **Backend HTTP:** Express · NestJS · Encore · Fastify · Vapor · Hummingbird · FastAPI · Flask · Django · Gin · Chi · Echo · Actix · Lapis · Kong · OpenResty · Rails routes
+- **Frontend / client:** RTK Query · TanStack Query · SWR · URLSession · AsyncHTTPClient · axios · fetch · SwiftUI views
+- **CI / infra:** GitHub Actions workflows (jobs, steps, `needs:` edges) · Terraform variables / modules / data sources · Helm charts · K8s manifests
+- **Package & dependency graphs:** `package.json` scripts + deps · `Cargo.toml` deps · `pyproject.toml` (best-effort)
+- **Database:** PostgreSQL RLS policies + triggers + functions, with heuristic edges to ORM schema
 
 ---
 
