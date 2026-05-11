@@ -16,11 +16,14 @@ when (if ever) to delete it.
 
    YOUR HOME
    ~/.memtrace/
-   ├── embed-cache/      ← per-symbol embedding cache (cross-workspace)
-   ├── fastembed_cache/  ← downloaded embedding models
-   ├── rerank-models/    ← downloaded reranker model
-   ├── auth/             ← session tokens (one file)
-   └── telemetry/        ← buffered events (only if telemetry is ON)
+   ├── embed-cache/         ← per-symbol embedding cache (cross-workspace)
+   ├── fastembed_cache/     ← downloaded embedding models
+   ├── rerank-models/       ← downloaded reranker model
+   ├── auth/                ← session tokens (one file)
+   ├── logs/                ← daemon.log + rotated history (v0.3.89)
+   ├── session-ledger.jsonl ← user-global MCP tool-call ledger (v0.3.89)
+   ├── watches.json         ← persistent watch_directory registrations (v0.3.89)
+   └── telemetry/           ← buffered events (only if telemetry is ON)
 ```
 
 Two important rules:
@@ -240,6 +243,74 @@ for what's actually in there.
 
 If you didn't opt in, this directory doesn't exist.
 
+## `~/.memtrace/logs/daemon.log` (v0.3.89)
+
+Daemon startup + error log. Rolling file appender:
+
+```
+~/.memtrace/logs/
+├── daemon.log         # current
+├── daemon.2026-05-10.log
+├── daemon.2026-05-09.log
+└── …                  # up to 5 files retained, rotated at 10 MB each
+```
+
+Populated from the first daemon-startup tick, so even an
+"exits-immediately" failure leaves a breadcrumb. Created on first
+`memtrace daemon start` after upgrading to v0.3.89.
+
+Override the location with `MEMTRACE_LOGS_DIR=<absolute path>` if
+you want logs somewhere else. Safe to delete the directory at any
+time — it'll be recreated on the next daemon start.
+
+## `~/.memtrace/session-ledger.jsonl` (v0.3.89)
+
+User-global JSONL append-log of MCP tool calls. One line per call:
+
+```jsonc
+{ "event_id": "…", "tool_name": "find_symbol", "task_label": "…",
+  "timestamp": "2026-05-11T11:42:13Z", "bytes_avoided": 1843,
+  "elapsed_ms": 38, "files_referenced": 2, "repo_id": "myrepo", … }
+```
+
+Moved here from `<workspace>/.memtrace/session-ledger.jsonl` in
+v0.3.89 to fix the bug @Badmrpotatohead reported where the
+dashboard's `/api/value/aggregate` view said "0 queries / $0.00"
+while the session log showed 140 historical calls — root cause
+was `memtrace mcp` (agent-launched) and `memtrace start` (run from
+your repo) writing to / reading from different ledger files because
+each was anchored to its own cwd.
+
+Override with `MEMTRACE_SESSION_LEDGER=<absolute path>` to put it
+somewhere else (e.g. per-workspace isolation if you really want it).
+
+Safe to delete — you lose historical receipts but the live counters
+keep working from in-memory state, and the file rebuilds itself on
+the next MCP call.
+
+## `~/.memtrace/watches.json` (v0.3.89)
+
+Persistent registry of `watch_directory` registrations, atomic
+write, BOM-tolerant read:
+
+```jsonc
+[
+  { "path": "D:\\Repos\\my-project", "repo_id": "my-project",
+    "registered_at": "2026-05-11T01:42:00Z", "origin": "manual" },
+  { "path": "/home/me/other-repo",   "repo_id": "other-repo",
+    "registered_at": "2026-05-10T22:14:55Z", "origin": "manual" }
+]
+```
+
+`origin` is `"manual"` for entries you registered via the
+`watch_directory` MCP tool, and `"restored"` for entries the MCP
+server re-armed from this file on boot.
+
+Restore-on-boot is on by default. Escape hatch:
+`MEMTRACE_NO_WATCH_RESTORE=1` makes the MCP server ignore this file.
+
+To forget all watches: delete the file.
+
 ## Things Memtrace creates outside its own directories
 
 A few files end up in your repo or home folder beyond the four
@@ -282,6 +353,9 @@ is never touched.
 | `~/.memtrace/rerank-models/` | Yes any time | Re-download reranker (~75 MB) |
 | `~/.memtrace/auth/` | Yes | Forces re-login on next start |
 | `~/.memtrace/telemetry/` | Yes | Drops any unsent events |
+| `~/.memtrace/logs/` | Yes any time | Drops historical daemon logs; new ones will be created |
+| `~/.memtrace/session-ledger.jsonl` | Yes any time | Loses historical MCP-call receipts; live counters keep working from in-memory state |
+| `~/.memtrace/watches.json` | Yes (daemon / MCP stopped) | All `watch_directory` registrations forgotten; re-register manually after deleting |
 
 Nothing here is precious. The graph rebuilds itself; the caches
 warm themselves; the auth re-authenticates. Memtrace is designed so

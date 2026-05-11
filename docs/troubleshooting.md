@@ -7,6 +7,7 @@ find your symptom, follow the fix.
 
 - [Install fails](#install-fails)
 - [Daemon won't start](#daemon-wont-start)
+- [Agent says "Memtrace index is empty"](#agent-says-memtrace-index-is-empty-0-nodes-0-edges-at-session-start)
 - [Agent isn't using the MCP](#agent-isnt-using-the-mcp)
 - [`MEMTRACE_TRANSPORT=sse` hangs](#memtrace_transportsse-hangs)
 - [Indexing hangs / never finishes](#indexing-hangs--never-finishes)
@@ -155,6 +156,39 @@ RUST_LOG=info memtrace start 2>&1 | head -50
 
 The first 50 lines almost always reveal the problem (model download
 failed, port collision, corrupt MemDB, etc.).
+
+## Agent says "Memtrace index is empty (0 nodes, 0 edges)" at session start
+
+Symptom (reported by @Corpo): your agent invokes `list_indexed_repositories` as its first MCP call, gets back an empty array, and concludes "Memtrace is broken, fall back to grep". This is **almost always** an anchor mismatch, not an actually-empty index.
+
+**As of v0.3.89, every empty MCP response carries a `_meta` envelope explaining what happened.** Ask your agent (or inspect the raw response) for:
+
+```jsonc
+{
+  "result": [],
+  "_meta": {
+    "anchor_source":      "cwd_fallback",   // env_override | workspace_marker | git_root | cwd_fallback
+    "data_dir":           "/Users/you/agent-cwd/.memdb",
+    "workspace_root":     "/Users/you/agent-cwd",
+    "cwd":                "/Users/you/agent-cwd",
+    "warming":            false,
+    "empty_state_reason": "no_workspace_marker_in_cwd_chain"
+  }
+}
+```
+
+The four common `empty_state_reason` values:
+
+| Value | What it means | Fix |
+|---|---|---|
+| `no_workspace_marker_in_cwd_chain` | `memtrace mcp` was launched from somewhere without a `.memtrace-workspace` marker or `.git/` above it; it created a fresh empty `.memdb` there | Add a `.memtrace-workspace` marker at the top of your project. Or set `MEMTRACE_MEMDB_DATA_DIR` to the absolute path of your real `.memdb`. |
+| `workspace_genuinely_empty` | Right `.memdb` was found, but nothing has been indexed yet | Run `memtrace index <path>` or start `memtrace start` and let auto-index run |
+| `still_loading` | MCP boot finished but the bound `.memdb` is still warming | Retry in 1-2 s |
+| `dual_memdb_drift` | `memtrace mcp`'s anchor differs from `memtrace start`'s anchor — they're looking at different `.memdb` directories | Set `MEMTRACE_MEMDB_DATA_DIR` to the absolute path of the one with real data, OR add a `.memtrace-workspace` marker so both processes converge |
+
+The fastest permanent fix for the common case: drop an empty file named `.memtrace-workspace` at the top of your project (or monorepo root). Both `memtrace start` and `memtrace mcp` walk upward looking for this marker and converge on the same `.memdb` regardless of which cwd they were launched from. See [`data-directories.md`](data-directories.md#where-memdb-actually-lives--workspace-anchor) for the full discovery order.
+
+If your custom MCP client doesn't read the `_meta` envelope, the result is still a bare empty array — non-empty responses pass through bit-for-bit unchanged.
 
 ## Agent isn't using the MCP
 

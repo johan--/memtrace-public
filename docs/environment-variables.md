@@ -12,6 +12,9 @@ the defaults auto-tune to your machine.
 - [Reranker](#reranker)
 - [Search / retrieval tuning](#search--retrieval-tuning)
 - [Resource caps](#resource-caps)
+- [Install / uninstall lifecycle (v0.3.89)](#install--uninstall-lifecycle-v0389)
+- [Watch persistence (v0.3.89)](#watch-persistence-v0389)
+- [Daemon lifecycle (v0.3.89)](#daemon-lifecycle-v0389)
 - [MemDB connection (advanced)](#memdb-connection-advanced)
 - [Telemetry + auth](#telemetry--auth)
 
@@ -32,6 +35,7 @@ the defaults auto-tune to your machine.
 | `MEMTRACE_MEMDB_DATA_DIR` | `<repo-root>/.memdb` | The MemDB graph data dir. Anchored to the git root if there is one, otherwise the cwd. Override with an absolute path for shared / CI setups. |
 | `FASTEMBED_CACHE_DIR` | `~/.memtrace/fastembed_cache` | Where downloaded embedding models live. |
 | `MEMTRACE_DEFAULT_REPO` | (unset) | If set, every tool call without a `repo_id` argument uses this. Convenient for single-repo workflows. |
+| `MEMTRACE_SESSION_LEDGER` | `~/.memtrace/session-ledger.jsonl` | **(v0.3.89)** Override the JSONL value ledger path. The default is user-global so `memtrace mcp` (agent-launched, any cwd) and `memtrace start` (run from your repo) write to / read from the same file regardless of where each process started. Set to an absolute path if you want per-workspace isolation. |
 
 ## Embedding pipeline
 
@@ -121,6 +125,37 @@ Session ID resolution (used to key the lock file at `~/.memtrace/hook-debounce/<
 | Var | Default | Purpose |
 |---|---|---|
 | `MEMTRACE_PREPUSH` | (unset) | Set to `off` / `0` / `false` / `no` / `disabled` for kill switch on the pre-push fortress hook (installed via `memtrace install-hooks --pre-push`). |
+
+## Install / uninstall lifecycle (v0.3.89)
+
+After @Badmrpotatohead's report that `npm install -g memtrace@latest` was wiping `~/.memtrace/` on upgrade, the uninstall path now distinguishes "user asked to uninstall" from "npm is upgrading me". User data is preserved by default — `MEMTRACE_PURGE_DATA=1` is the explicit opt-in for a full wipe.
+
+| Var | Default | Purpose |
+|---|---|---|
+| `MEMTRACE_PURGE_DATA` | (unset) | Set to `1` to allow `npm uninstall -g memtrace` to remove `~/.memtrace/` (session ledger, embed cache, auth tokens, telemetry buffer, logs). Without this, uninstall preserves user data. Has no effect during upgrades — the lifecycle gate refuses to purge during install/update/upgrade even if this var is set. |
+| `MEMTRACE_UNINSTALL_PURGE_DATA` | (unset) | Alias for the above. |
+| `MEMTRACE_INSTALL_PARENT` | (set internally) | `bin/memtrace.js` sets this to `1` before spawning the npm self-upgrade child process so the inner uninstall lifecycle knows it's an upgrade, not an explicit uninstall. Agents shouldn't set this manually. |
+
+## Watch persistence (v0.3.89)
+
+After @Magalz's report that `watch_directory` registrations vanished on MCP disconnect, watches now persist to `~/.memtrace/watches.json` and are restored on every MCP boot.
+
+| Var | Default | Purpose |
+|---|---|---|
+| `MEMTRACE_NO_WATCH_RESTORE` | (unset) | Set to `1` to skip the watch-list restore on MCP startup. Useful if you have stale watch state you want forgotten — just unset it again on the next start to re-enable restore. |
+
+The watch file is a JSON array of `{ path, repo_id, registered_at, origin }` objects; `origin` is `"manual"` for entries you registered explicitly via `watch_directory` and `"restored"` for entries that were re-armed from a prior session.
+
+## Daemon lifecycle (v0.3.89)
+
+After @Magalz's report that `memtrace daemon start` was reporting "started" while the daemon silently exited 2-3 s later on Windows, the launcher now health-checks before declaring success.
+
+| Var | Default | Purpose |
+|---|---|---|
+| `MEMTRACE_DAEMON_HEALTH_TIMEOUT_MS` | `10000` | How long `memtrace daemon start` polls `/api/health` before giving up and printing the "did not bind within Ns" warning. Increase on slow / cold-cache Windows hosts. |
+| `MEMTRACE_DAEMON_HEALTH_INTERVAL_MS` | `500` | Polling interval. |
+
+The daemon now also writes `~/.memtrace/logs/daemon.log` (rotated at 10 MB, max 5 files) from its first startup tick, so even an "exits immediately" failure leaves a breadcrumb. Run `memtrace daemon start --foreground` (alias `--verbose`) to skip the detach and see stderr directly in your shell.
 
 ## MemDB connection (advanced)
 
