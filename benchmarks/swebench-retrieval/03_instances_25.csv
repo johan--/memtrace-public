@@ -1,0 +1,26 @@
+instance_id,repo,base_commit,difficulty,created_at
+django__django-10554,django/django,14d026cccb144c6877294ba4cd4e03ebf0842498,1-4 hours,2018-10-24T14:24:45Z
+django__django-11163,django/django,e6588aa4e793b7f56f4cadbfa155b581e0efc59a,<15 min fix,2019-04-02T21:46:42Z
+django__django-11211,django/django,ba726067604ce5a8ca3919edf653496722b433ab,15 min - 1 hour,2019-04-13T12:01:14Z
+django__django-11292,django/django,eb16c7260e573ec513d84cb586d96bdf508f3173,15 min - 1 hour,2019-04-27T14:23:07Z
+django__django-11451,django/django,e065b293878b1e3ea56655aa9d33e87576cd77ff,<15 min fix,2019-06-08T19:11:42Z
+django__django-13028,django/django,78ad4b4b0201003792bfdbf1a7781cbc9ee03539,15 min - 1 hour,2020-06-05T19:49:04Z
+django__django-13512,django/django,b79088306513d5ed76d31ac40ab3c15f858946ea,<15 min fix,2020-10-08T13:52:57Z
+django__django-15814,django/django,5eb6a2b33d70b9889e1cafa12594ad6f80773d3a,15 min - 1 hour,2022-07-03T19:10:56Z
+django__django-15916,django/django,88e67a54b7ed0210c11523a337b498aadb2f5187,15 min - 1 hour,2022-08-04T18:59:18Z
+django__django-16116,django/django,5d36a8266c7d5d1994d7a7eeb4016f80d9cb0401,<15 min fix,2022-09-25T23:54:49Z
+django__django-16145,django/django,93d4c9ea1de24eb391cb2b3561b6703fd46374df,<15 min fix,2022-10-03T05:09:14Z
+matplotlib__matplotlib-20826,matplotlib/matplotlib,a0d2e399729d36499a1924e5ca5bc067c8396810,15 min - 1 hour,2021-08-11T06:23:50Z
+matplotlib__matplotlib-23476,matplotlib/matplotlib,33a0599711d26dc2b79f851c6daed4947df7c167,<15 min fix,2022-07-22T18:58:22Z
+matplotlib__matplotlib-25287,matplotlib/matplotlib,f8ffce6d44127d4ea7d6491262ab30046b03294b,<15 min fix,2023-02-22T18:19:27Z
+pytest-dev__pytest-5631,pytest-dev/pytest,cb828ebe70b4fa35cd5f9a7ee024272237eab351,15 min - 1 hour,2019-07-19T20:13:12Z
+scikit-learn__scikit-learn-11578,scikit-learn/scikit-learn,dd69361a0d9c6ccde0d2353b00b86e0e7541a3e3,15 min - 1 hour,2018-07-16T23:21:56Z
+scikit-learn__scikit-learn-13124,scikit-learn/scikit-learn,9f0b959a8c9195d1b6e203f08b698e052b426ca9,15 min - 1 hour,2019-02-09T02:15:23Z
+scikit-learn__scikit-learn-25931,scikit-learn/scikit-learn,e3d1f9ac39e4bf0f31430e779acc50fb05fe1b64,15 min - 1 hour,2023-03-22T00:34:47Z
+sphinx-doc__sphinx-11510,sphinx-doc/sphinx,6cb783c0024a873722952a67ebb9f41771c8eb6d,1-4 hours,2023-07-24T22:46:12Z
+sphinx-doc__sphinx-7748,sphinx-doc/sphinx,9988d5ce267bf0df4791770b469431b1fb00dcdd,15 min - 1 hour,2020-05-30T06:41:07Z
+sphinx-doc__sphinx-8721,sphinx-doc/sphinx,82ef497a8c88f0f6e50d84520e7276bfbf65025d,<15 min fix,2021-01-21T15:36:24Z
+sphinx-doc__sphinx-9367,sphinx-doc/sphinx,6918e69600810a4664e53653d6ff0290c3c4a788,<15 min fix,2021-06-20T17:49:40Z
+sphinx-doc__sphinx-9602,sphinx-doc/sphinx,6c38f68dae221e8cfc70c137974b8b88bd3baaab,15 min - 1 hour,2021-09-01T17:26:58Z
+sympy__sympy-12096,sympy/sympy,d7c3045115693e887bcd03599b7ca4650ac5f2cb,<15 min fix,2017-01-25T13:40:24Z
+sympy__sympy-22080,sympy/sympy,3f8c8c2377cb8e0daaf8073e8d03ac7d87580813,15 min - 1 hour,2021-09-12T07:11:33Z

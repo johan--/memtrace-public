@@ -1,0 +1,101 @@
+instance_id,repo,base_commit,difficulty,created_at
+astropy__astropy-14598,astropy/astropy,80c3854a5f4f4a6ab86c03d9db7854767fcd83c1,15 min - 1 hour,2023-03-29T10:34:49Z
+astropy__astropy-8872,astropy/astropy,b750a0e6ee76fb6b8a099a4d16ec51977be46bf6,15 min - 1 hour,2019-06-19T20:34:56Z
+django__django-10554,django/django,14d026cccb144c6877294ba4cd4e03ebf0842498,1-4 hours,2018-10-24T14:24:45Z
+django__django-10880,django/django,838e432e3e5519c5383d12018e6c78f8ec7833c1,<15 min fix,2019-01-21T00:22:36Z
+django__django-10914,django/django,e7fd69d051eaa67cb17f172a39b57253e9cb831a,<15 min fix,2019-01-30T13:13:20Z
+django__django-11087,django/django,8180ffba21bf10f4be905cb0d4890dc2bcff2788,15 min - 1 hour,2019-03-16T22:59:57Z
+django__django-11119,django/django,d4df5e1b0b1c643fe0fc521add0236764ec8e92a,<15 min fix,2019-03-24T21:17:05Z
+django__django-11163,django/django,e6588aa4e793b7f56f4cadbfa155b581e0efc59a,<15 min fix,2019-04-02T21:46:42Z
+django__django-11206,django/django,571ab44e8a8936014c22e7eebe4948d9611fd7ce,15 min - 1 hour,2019-04-13T10:19:38Z
+django__django-11299,django/django,6866c91b638de5368c18713fa851bfe56253ea55,<15 min fix,2019-04-28T11:15:08Z
+django__django-11451,django/django,e065b293878b1e3ea56655aa9d33e87576cd77ff,<15 min fix,2019-06-08T19:11:42Z
+django__django-11532,django/django,a5308514fb4bc5086c9a16a8a24a945eeebb073c,15 min - 1 hour,2019-07-02T10:29:28Z
+django__django-11964,django/django,fc2b1cc926e34041953738e58fa6ad3053059b22,<15 min fix,2019-10-23T14:16:45Z
+django__django-12050,django/django,b93a0e34d9b9b99d41103782b7e7aeabf47517e3,15 min - 1 hour,2019-11-10T08:53:45Z
+django__django-12143,django/django,5573a54d409bb98b5c5acdb308310bed02d392c2,15 min - 1 hour,2019-11-25T14:38:30Z
+django__django-12774,django/django,67f9d076cfc1858b94f9ed6d1a5ce2327dcc8d0d,15 min - 1 hour,2020-04-22T11:02:30Z
+django__django-13028,django/django,78ad4b4b0201003792bfdbf1a7781cbc9ee03539,15 min - 1 hour,2020-06-05T19:49:04Z
+django__django-13363,django/django,76e0151ea0e0f56dca66cee846a78b89346d2c4c,<15 min fix,2020-08-29T18:59:41Z
+django__django-13551,django/django,7f9e4524d6b23424cf44fbe1bf1f4e70f6bb066e,<15 min fix,2020-10-17T17:22:01Z
+django__django-13569,django/django,257f8495d6c93e30ab0f52af4c488d7344bcf112,15 min - 1 hour,2020-10-19T21:20:55Z
+django__django-14089,django/django,d01709aae21de9cd2565b9c52f32732ea28a2d98,<15 min fix,2021-03-06T20:51:08Z
+django__django-14170,django/django,6efc35b4fe3009666e56a60af0675d7d532bf4ff,15 min - 1 hour,2021-03-23T08:53:41Z
+django__django-14351,django/django,06fd4df41afb5aa1d681b853c3c08d8c688ca3a5,15 min - 1 hour,2021-05-05T03:50:44Z
+django__django-14376,django/django,d06c5b358149c02a62da8a5469264d05f29ac659,<15 min fix,2021-05-10T20:42:18Z
+django__django-14404,django/django,de32fe83a2e4a20887972c69a0693b94eb25a88b,<15 min fix,2021-05-17T11:24:06Z
+django__django-14539,django/django,6a5ef557f80a8eb6a758ebe99c8bb477ca47459e,<15 min fix,2021-06-19T11:31:16Z
+django__django-14631,django/django,84400d2e9db7c51fee4e9bb04c028f665b8e7624,1-4 hours,2021-07-13T09:16:48Z
+django__django-14672,django/django,00ea883ef56fb5e092cbe4a6f7ff2e7470886ac4,15 min - 1 hour,2021-07-20T10:47:34Z
+django__django-14725,django/django,0af9a5fc7d765aa05ea784e2c3237675f3bb4b49,15 min - 1 hour,2021-08-01T21:24:36Z
+django__django-14787,django/django,004b4620f6f4ad87261e149898940f2dcd5757ef,<15 min fix,2021-08-23T12:59:59Z
+django__django-15103,django/django,dd528cb2cefc0db8b91a7ff0a2bc87305b976597,15 min - 1 hour,2021-11-19T15:57:54Z
+django__django-15252,django/django,361bb8f786f112ee275be136795c0b1ecefff928,15 min - 1 hour,2021-12-28T15:51:06Z
+django__django-15315,django/django,652c68ffeebd510a6f59e1b56b3e007d07683ad8,<15 min fix,2022-01-13T18:51:58Z
+django__django-15375,django/django,beb7ddbcee03270e833b2f74927ccfc8027aa693,15 min - 1 hour,2022-01-28T14:48:03Z
+django__django-15499,django/django,d90e34c61b27fba2527834806639eebbcfab9631,<15 min fix,2022-03-10T22:32:35Z
+django__django-15525,django/django,fbacaa58ffc5a62456ee68b90efa13957f761ce4,15 min - 1 hour,2022-03-18T10:39:26Z
+django__django-15572,django/django,0b31e024873681e187b574fe1c4afe5e48aeeecf,<15 min fix,2022-04-09T09:38:31Z
+django__django-15731,django/django,93cedc82f29076c824d476354527af1150888e4f,15 min - 1 hour,2022-05-24T12:30:05Z
+django__django-15732,django/django,ce69e34bd646558bb44ea92cecfd98b345a0b3e0,15 min - 1 hour,2022-05-24T12:58:31Z
+django__django-15814,django/django,5eb6a2b33d70b9889e1cafa12594ad6f80773d3a,15 min - 1 hour,2022-07-03T19:10:56Z
+django__django-15851,django/django,b4817d20b9e55df30be0b1b2ca8c8bb6d61aab07,<15 min fix,2022-07-18T01:36:33Z
+django__django-16139,django/django,d559cb02da30f74debbb1fc3a46de0df134d2d80,<15 min fix,2022-09-30T08:51:16Z
+django__django-16315,django/django,7d5329852f19c6ae78c6f6f3d3e41835377bf295,15 min - 1 hour,2022-11-22T09:44:54Z
+django__django-16612,django/django,55bcbd8d172b689811fae17cde2f09218dd74e9c,15 min - 1 hour,2023-03-02T19:06:12Z
+django__django-16631,django/django,9b224579875e30203d079cc2fee83b116d98eb78,1-4 hours,2023-03-06T15:19:52Z
+django__django-16662,django/django,0eb3e9bd754e4c9fac8b616b705178727fc8031e,15 min - 1 hour,2023-03-18T18:07:18Z
+django__django-16877,django/django,98f6ada0e2058d67d91fb6c16482411ec2ca0967,15 min - 1 hour,2023-05-19T23:11:10Z
+django__django-16899,django/django,d3d173425fc0a1107836da5b4567f1c88253191b,<15 min fix,2023-05-26T13:41:37Z
+django__django-17029,django/django,953f29f700a60fc09b08b2c2270c12c447490c6a,<15 min fix,2023-06-29T13:18:26Z
+django__django-17087,django/django,4a72da71001f154ea60906a2f74898d32b7322a7,<15 min fix,2023-07-17T20:28:41Z
+django__django-9296,django/django,84322a29ce9b0940335f8ab3d60e55192bef1e50,<15 min fix,2017-10-27T11:10:04Z
+matplotlib__matplotlib-22871,matplotlib/matplotlib,a7b7260bf06c20d408215d95ce20a1a01c12e5b1,15 min - 1 hour,2022-04-21T13:10:50Z
+matplotlib__matplotlib-24026,matplotlib/matplotlib,14c96b510ebeba40f573e512299b1976f35b620e,15 min - 1 hour,2022-09-28T02:45:01Z
+matplotlib__matplotlib-25122,matplotlib/matplotlib,5ec2bd279729ff534719b8bf238dbbca907b93c5,<15 min fix,2023-02-01T03:41:00Z
+matplotlib__matplotlib-25287,matplotlib/matplotlib,f8ffce6d44127d4ea7d6491262ab30046b03294b,<15 min fix,2023-02-22T18:19:27Z
+matplotlib__matplotlib-25311,matplotlib/matplotlib,430fb1db88843300fb4baae3edc499bbfe073b0c,<15 min fix,2023-02-23T21:04:12Z
+matplotlib__matplotlib-25960,matplotlib/matplotlib,1d0d255b79e84dfc9f2123c5eb85a842d342f72b,15 min - 1 hour,2023-05-23T21:58:53Z
+pydata__xarray-6721,pydata/xarray,cc183652bf6e1273e985e1c4b3cba79c896c1193,15 min - 1 hour,2022-06-24T18:45:45Z
+pydata__xarray-6744,pydata/xarray,7cc6cc991e586a6158bb656b8001234ccda25407,15 min - 1 hour,2022-07-02T16:36:00Z
+pydata__xarray-6938,pydata/xarray,c4e40d991c28be51de9ac560ce895ac7f9b14924,15 min - 1 hour,2022-08-20T16:45:22Z
+pydata__xarray-6992,pydata/xarray,45c0a114e2b7b27b83c9618bc05b36afac82183c,>4 hours,2022-09-05T15:07:43Z
+pylint-dev__pylint-4661,pylint-dev/pylint,1d1619ef913b99b06647d2030bddff4800abdf63,15 min - 1 hour,2021-07-03T00:57:06Z
+pylint-dev__pylint-6528,pylint-dev/pylint,273a8b25620467c1e5686aa8d2a1dbb8c02c78d0,15 min - 1 hour,2022-05-06T21:03:37Z
+pylint-dev__pylint-8898,pylint-dev/pylint,1f8c4d9eb185c16a2c1d881c054f015e1c2eb334,1-4 hours,2023-07-29T21:53:59Z
+pytest-dev__pytest-10081,pytest-dev/pytest,da9a2b584eb7a6c7e924b2621ed0ddaeca0a7bea,<15 min fix,2022-06-26T13:53:24Z
+pytest-dev__pytest-5262,pytest-dev/pytest,58e6a09db49f34886ff13f3b7520dd0bcd7063cd,<15 min fix,2019-05-14T21:54:55Z
+pytest-dev__pytest-5787,pytest-dev/pytest,955e54221008aba577ecbaefa15679f6777d3bf8,1-4 hours,2019-08-26T16:43:31Z
+pytest-dev__pytest-7236,pytest-dev/pytest,c98bc4cd3d687fe9b392d8eecd905627191d4f06,15 min - 1 hour,2020-05-21T19:53:14Z
+pytest-dev__pytest-8399,pytest-dev/pytest,6e7dc8bac831cd8cf7a53b08efa366bd84f0c0fe,15 min - 1 hour,2021-03-04T17:52:17Z
+scikit-learn__scikit-learn-11578,scikit-learn/scikit-learn,dd69361a0d9c6ccde0d2353b00b86e0e7541a3e3,15 min - 1 hour,2018-07-16T23:21:56Z
+scikit-learn__scikit-learn-12973,scikit-learn/scikit-learn,a7b8b9e9e16d4e15fabda5ae615086c2e1c47d8a,15 min - 1 hour,2019-01-13T16:19:52Z
+scikit-learn__scikit-learn-13124,scikit-learn/scikit-learn,9f0b959a8c9195d1b6e203f08b698e052b426ca9,15 min - 1 hour,2019-02-09T02:15:23Z
+scikit-learn__scikit-learn-13135,scikit-learn/scikit-learn,a061ada48efccf0845acae17009553e01764452b,<15 min fix,2019-02-11T21:34:25Z
+scikit-learn__scikit-learn-13328,scikit-learn/scikit-learn,37b0e66c871e8fb032a9c7086b2a1d5419838154,<15 min fix,2019-02-28T12:47:52Z
+scikit-learn__scikit-learn-14053,scikit-learn/scikit-learn,6ab8c86c383dd847a1be7103ad115f174fe23ffd,15 min - 1 hour,2019-06-09T15:36:55Z
+scikit-learn__scikit-learn-14629,scikit-learn/scikit-learn,4aded39b5663d943f6a4809abacfa9cae3d7fb6a,15 min - 1 hour,2019-08-12T09:31:54Z
+scikit-learn__scikit-learn-26194,scikit-learn/scikit-learn,e886ce4e1444c61b865e7839c9cff5464ee20ace,15 min - 1 hour,2023-04-17T16:33:08Z
+sphinx-doc__sphinx-10614,sphinx-doc/sphinx,ac2b7599d212af7d04649959ce6926c63c3133fa,15 min - 1 hour,2022-06-29T14:29:04Z
+sphinx-doc__sphinx-10673,sphinx-doc/sphinx,f35d2a6cc726f97d0e859ca7a0e1729f7da8a6c8,15 min - 1 hour,2022-07-16T19:29:29Z
+sphinx-doc__sphinx-7462,sphinx-doc/sphinx,b3e26a6c851133b82b50f4b68b53692076574d13,<15 min fix,2020-04-12T04:10:05Z
+sphinx-doc__sphinx-8459,sphinx-doc/sphinx,68aa4fb29e7dfe521749e1e14f750d7afabb3481,<15 min fix,2020-11-20T16:44:10Z
+sphinx-doc__sphinx-8721,sphinx-doc/sphinx,82ef497a8c88f0f6e50d84520e7276bfbf65025d,<15 min fix,2021-01-21T15:36:24Z
+sphinx-doc__sphinx-9229,sphinx-doc/sphinx,876fa81e0a038cda466925b85ccf6c5452e0f685,1-4 hours,2021-05-15T07:21:49Z
+sphinx-doc__sphinx-9658,sphinx-doc/sphinx,232dbe41c5250eb7d559d40438c4743483e95f15,15 min - 1 hour,2021-09-20T17:04:23Z
+sympy__sympy-12481,sympy/sympy,c807dfe7569692cad24f02a08477b70c1679a4dd,<15 min fix,2017-04-03T01:52:33Z
+sympy__sympy-14248,sympy/sympy,9986b38181cdd556a3f3411e553864f11912244e,1-4 hours,2018-02-17T10:38:44Z
+sympy__sympy-14711,sympy/sympy,c6753448b5c34f95e250105d76709fe4d349ca1f,<15 min fix,2018-05-12T17:00:20Z
+sympy__sympy-15017,sympy/sympy,6810dee426943c1a2fe85b5002dd0d4cf2246a05,<15 min fix,2018-08-03T03:15:04Z
+sympy__sympy-15599,sympy/sympy,5e17a90c19f7eecfa10c1ab872648ae7e2131323,15 min - 1 hour,2018-12-06T17:45:49Z
+sympy__sympy-16450,sympy/sympy,aefdd023dc4f73c441953ed51f5f05a076f0862f,<15 min fix,2019-03-26T18:00:02Z
+sympy__sympy-16886,sympy/sympy,c50643a49811e9fe2f4851adff4313ad46f7325e,<15 min fix,2019-05-25T05:55:25Z
+sympy__sympy-17318,sympy/sympy,d4e0231b08147337745dcf601e62de7eefe2fb2d,15 min - 1 hour,2019-08-01T11:55:36Z
+sympy__sympy-17630,sympy/sympy,58e78209c8577b9890e957b624466e5beed7eb08,1-4 hours,2019-09-18T22:56:31Z
+sympy__sympy-18211,sympy/sympy,b4f1aa3540fe68d078d76e78ba59d022dd6df39f,15 min - 1 hour,2020-01-03T06:39:19Z
+sympy__sympy-19783,sympy/sympy,586a43201d0357e92e8c93548d69a9f42bf548f4,15 min - 1 hour,2020-07-16T09:40:38Z
+sympy__sympy-21847,sympy/sympy,d9b18c518d64d0ebe8e35a98c2fb519938b9b151,<15 min fix,2021-08-10T17:41:59Z
+sympy__sympy-21930,sympy/sympy,de446c6d85f633271dfec1452f6f28ea783e293f,15 min - 1 hour,2021-08-22T20:29:08Z
+sympy__sympy-22456,sympy/sympy,a3475b3f9ac662cd425157dd3bdb93ad7111c090,15 min - 1 hour,2021-11-10T12:24:42Z
+sympy__sympy-23413,sympy/sympy,10de1a18a0efac0b19b611e40c928250dda688bf,15 min - 1 hour,2022-04-23T23:40:41Z
+sympy__sympy-24443,sympy/sympy,809c53c077485ca48a206cee78340389cb83b7f1,15 min - 1 hour,2022-12-30T14:43:19Z

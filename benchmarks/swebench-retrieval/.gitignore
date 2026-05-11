@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.pyc
+results/*/run_meta.json
+results/*/cost.json
+results/*/per_instance.csv
+results/*/trajectories/
