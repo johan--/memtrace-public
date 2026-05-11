@@ -6,13 +6,17 @@ when (if ever) to delete it.
 ## TL;DR map
 
 ```
-   YOUR PROJECT
-   ├── .memdb/           ← graph + vectors for THIS project (per-repo)
-   └── .memtrace/        ← indexer job state (transient, small)
+   YOUR WORKSPACE  (anchored by .memtrace-workspace marker, or git root, or CWD)
+   ├── .memtrace-workspace  ← optional anchor — multiple repos here share one .memdb
+   ├── .memdb/              ← graph + vectors for every repo under this anchor
+   ├── .memtrace/           ← indexer job state (transient, small)
+   ├── repo-a/
+   ├── repo-b/
+   └── repo-c/
 
    YOUR HOME
    ~/.memtrace/
-   ├── embed-cache/      ← per-symbol embedding cache (cross-project)
+   ├── embed-cache/      ← per-symbol embedding cache (cross-workspace)
    ├── fastembed_cache/  ← downloaded embedding models
    ├── rerank-models/    ← downloaded reranker model
    ├── auth/             ← session tokens (one file)
@@ -20,17 +24,67 @@ when (if ever) to delete it.
 ```
 
 Two important rules:
-- **Per-project state lives in your project.** That makes copying /
-  archiving / nuking a project's graph trivial — `rm -rf .memdb` is
-  always safe.
-- **Cross-project state lives in `~/.memtrace/`.** Models, embedding
-  cache, and your session token aren't tied to a single repo.
+- **Workspace state lives in the workspace, not the per-repo.** Sibling
+  repos under one `.memtrace-workspace` marker (or one git root, if no
+  marker) share a single `.memdb/`. That makes cross-repo edges work —
+  your TS frontend's `fetch("/api/users")` can link to your Rust
+  backend's `Router::route(...)` even though they're in separate repo
+  directories. `memtrace reset <repo_id>` removes only one repo's
+  records; `rm -rf .memdb/` wipes them all.
+- **Cross-workspace state lives in `~/.memtrace/`.** Models, embedding
+  cache, and your session token aren't tied to a workspace.
 
-## Per-project: `<project>/.memdb/`
+## Where `.memdb/` actually lives — workspace anchor
 
-The MemDB graph engine's on-disk store. Created the first time you
-run `memtrace start` or `memtrace index <path>` from your project
-root.
+The MemDB graph engine's on-disk store. Created the first time you run
+`memtrace start` or `memtrace index <path>` somewhere under a workspace.
+
+**Discovery order** when Memtrace boots:
+
+1. **`.memtrace-workspace` marker** (explicit anchor — empty file is fine).
+   Memtrace walks UP from the current working directory looking for it.
+   First match wins. All sibling directories under the marker share one
+   `.memdb/`. *Recommended for monorepos and multi-repo workspaces.*
+2. **`.git/` root** (per-repo fallback). If no `.memtrace-workspace`
+   marker is found, Memtrace uses the nearest git repo root.
+3. **Current working directory** if neither marker nor git root is found.
+
+Quick way to confirm where YOUR `.memdb` is on a running system:
+
+```
+memtrace status
+```
+
+The startup banner also prints:
+
+```
+◆  MemDB embedded — in-process (data dir: /your/path/.memdb)
+```
+
+### Multi-repo workspace example
+
+```
+$ pwd
+/home/me/work/
+
+$ tree -L 1 -a
+.
+├── .memtrace-workspace      ← marker, you `touch`-ed this
+├── .memdb/                  ← ONE store for all 3 repos
+├── frontend/                ← repo A (git)
+├── backend/                 ← repo B (git)
+└── infra/                   ← repo C (terraform-only, no git)
+
+$ cd frontend && memtrace index .
+# → registers frontend's symbols in /home/me/work/.memdb under repo_id=frontend
+
+$ cd ../backend && memtrace index .
+# → registers backend's symbols in the SAME .memdb under repo_id=backend
+# Cross-language edges between frontend & backend symbols work out of the box.
+```
+
+Without the marker, each repo gets its own `<repo>/.memdb/` and they
+can't see each other.
 
 Layout (high-level — the inner files are MemDB's business; don't
 touch them):
