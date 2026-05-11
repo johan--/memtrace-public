@@ -51,7 +51,7 @@ def check_python_venv() -> Check:
 
 
 def check_anthropic_key() -> Check:
-    c = Check(name="ANTHROPIC_API_KEY in env", rows=frozenset({"agentic", "memtrace"}))
+    c = Check(name="ANTHROPIC_API_KEY in env", rows=frozenset({"vector", "agentic", "memtrace"}))
     key = os.environ.get("ANTHROPIC_API_KEY", "")
     if not key:
         return _set(c, "fail", "not set; export ANTHROPIC_API_KEY=sk-ant-...")
@@ -61,7 +61,7 @@ def check_anthropic_key() -> Check:
 
 
 def check_claude_cli() -> Check:
-    c = Check(name="Claude Code CLI in PATH", rows=frozenset({"agentic"}))
+    c = Check(name="Claude Code CLI in PATH", rows=frozenset({"vector", "agentic", "memtrace"}))
     path = shutil.which("claude")
     if not path:
         return _set(c, "fail", "not on PATH; install per https://docs.claude.com/claude-code")
@@ -73,7 +73,7 @@ def check_claude_cli() -> Check:
 
 
 def check_memtrace_cli() -> Check:
-    c = Check(name="Memtrace CLI version >= 0.3.87", rows=frozenset({"memtrace"}))
+    c = Check(name="Memtrace CLI version >= 0.3.87", rows=frozenset({"vector", "memtrace"}))
     path = shutil.which("memtrace")
     if not path:
         return _set(c, "fail", "not on PATH; install per https://github.com/syncable-dev/memtrace-public")
@@ -92,7 +92,7 @@ def check_memtrace_cli() -> Check:
 
 
 def check_memtrace_mcp() -> Check:
-    c = Check(name="Memtrace MCP server reachable", rows=frozenset({"memtrace"}))
+    c = Check(name="Memtrace MCP server reachable", rows=frozenset({"vector", "memtrace"}))
     # Heuristic: if claude config has memtrace registered. Best-effort check.
     try:
         out = subprocess.check_output(["claude", "mcp", "list"], text=True, timeout=10)
@@ -104,28 +104,13 @@ def check_memtrace_mcp() -> Check:
 
 
 def check_disk_free(min_gb: int = 20) -> Check:
-    c = Check(name=f"Disk free >= {min_gb} GB at .memdb path", rows=frozenset({"memtrace", "agentic"}))
+    c = Check(name=f"Disk free >= {min_gb} GB at .memdb path", rows=frozenset({"vector", "memtrace", "agentic"}))
     here = Path(__file__).resolve().parent.parent
     stat = shutil.disk_usage(here)
     free_gb = stat.free / (1024**3)
     if free_gb < min_gb:
         return _set(c, "fail", f"{free_gb:.1f} GB free; need >= {min_gb} GB")
     return _set(c, "ok", f"{free_gb:.1f} GB free at {here}")
-
-
-def check_sentence_transformers() -> Check:
-    c = Check(name="sentence-transformers importable (CodeRankEmbed variant)", rows=frozenset({"vector-coderankembed"}))
-    venv_python = Path(__file__).resolve().parent.parent / ".venv" / "bin" / "python"
-    try:
-        out = subprocess.check_output(
-            [str(venv_python), "-c", "import sentence_transformers; print(sentence_transformers.__version__)"],
-            stderr=subprocess.STDOUT, text=True, timeout=15,
-        ).strip()
-        return _set(c, "ok", f"sentence-transformers {out}")
-    except subprocess.CalledProcessError:
-        return _set(c, "fail", "not installed; run `.venv/bin/pip install sentence-transformers`")
-    except Exception as e:
-        return _set(c, "warn", f"check failed: {e}")
 
 
 def check_git() -> Check:
@@ -162,7 +147,6 @@ ALL_CHECKS = [
     check_memtrace_cli,
     check_memtrace_mcp,
     check_disk_free,
-    check_sentence_transformers,
     check_git,
 ]
 
@@ -201,7 +185,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument(
         "--row",
-        choices=["vector-default", "vector-coderankembed", "agentic", "memtrace"],
+        choices=["vector", "agentic", "memtrace"],
         default=None,
         help="Only validate the prerequisites for this specific row.",
     )

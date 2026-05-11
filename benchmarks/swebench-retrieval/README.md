@@ -33,11 +33,10 @@ When the writeup is published, link the **git commit hash** that first added thi
 | `05_repro.sh` | one-shot re-runner; `bash 05_repro.sh sample` regenerates CSVs from the pinned parquet |
 | `requirements.txt` | pinned Python deps (pandas, pyarrow, numpy, requests) |
 | `data/verified_500.parquet` | HuggingFace snapshot, sha256 below; **bit-identical pre-registration evidence** |
-| `prompts/vector_query.md` | Vector variant A — Memtrace's default embedder (frozen) |
-| `prompts/vector_query_coderankembed.md` | Vector variant B — `nomic-ai/CodeRankEmbed` SOTA code embedder (frozen) |
+| `prompts/vector_query.md` | Vector row spec — Memtrace + `find_code` only, RRF vector-only weights |
 | `prompts/agentic_system.md` | frozen Claude Code system prompt, tool list, turn limit |
 | `prompts/memtrace_query.md` | frozen Memtrace tool list + system prompt |
-| `results/{vector-default,vector-coderankembed,agentic,memtrace}/` | empty until Phase 2 — per-row outputs land here |
+| `results/{vector,agentic,memtrace}/` | empty until Phase 2 — per-row outputs land here |
 
 ---
 
@@ -69,16 +68,15 @@ See `01_methodology.md` §3 for the full protocol.
 
 ---
 
-## Rows being compared (4 total, after the CodeRankEmbed amendment)
+## Rows being compared (3 total)
 
-| Row | Retrieval mechanism | Embedder |
+| Row | Retrieval mechanism | Same `.memdb` as Memtrace? |
 |---|---|---|
-| `vector-default` | chunked-file vector retrieval | Memtrace's default code embedder |
-| `vector-coderankembed` | chunked-file vector retrieval | `nomic-ai/CodeRankEmbed` (SOTA public code embedder, ICLR 2025) |
-| `agentic` | Claude Code grep/glob/read loop, 30 turns | n/a |
-| `memtrace` | Memtrace AST-graph tool calls + LeanCTX, 30 turns | n/a |
+| `vector` | Memtrace's `find_code` with **RRF weights `VECTOR=1.0, BM25=EXACT=GRAPH=0`** (pure dense semantic) | yes |
+| `agentic` | Claude Code grep/glob/read loop, 30 turns, no Memtrace | no — operates on raw filesystem |
+| `memtrace` | Memtrace AST-graph tool calls + LeanCTX, full hybrid RRF, 30 turns | yes |
 
-The two Vector variants exist to pre-empt the "you picked a weak embedder" critique — CodeRankEmbed is currently the strongest publicly available code embedder, so reporting both variants makes the Vector row a real ceiling rather than a strawman.
+**Why "vector" is an ablation of "memtrace", not a separate pipeline**: same indexer, same embedder (Jina-code), same corpus. The only differences are the RRF weights at fusion and the tool inventory available to the LM. This makes the comparison "what does the graph add over pure vector retrieval, on the same indexed corpus?" — direct ablation, no embedder confound.
 
 ---
 
@@ -116,11 +114,11 @@ bash run_benchmark.sh --full             # appendix: n=100, ~$180–600
 
 Behind the scenes:
 
-1. `runners/check_env.py` — verifies API key, Memtrace ≥ 0.3.87, Claude Code, MCP, disk, deps
+1. `runners/check_env.py` — verifies API key, Memtrace ≥ 0.3.87, Claude Code, MCP, disk, git
 2. `runners/clone_repos.py` — clones each unique `(repo, base_commit)` into `work/repos/`
-3. `runners/run_vector.py` — local inference (Jina-code variant A, CodeRankEmbed variant B). No API spend
-4. `runners/run_agentic.py` — Claude Code `-p` headless, Bash/Grep/Glob/Read, 30 turns, `--max-budget-usd` per task
-5. `runners/run_memtrace.py` — Claude Code `-p` headless, Memtrace MCP tools only, 30 turns
+3. `runners/run_vector.py` — Claude Code `-p` + Memtrace `find_code` only, RRF weights pinned to vector-only (`VECTOR=1.0, BM25=EXACT=GRAPH=0`). Shares the `.memdb` with the Memtrace row
+4. `runners/run_agentic.py` — Claude Code `-p` headless, Bash/Grep/Glob/Read, 30 turns
+5. `runners/run_memtrace.py` — Claude Code `-p` headless, full Memtrace MCP tool set, default RRF weights
 6. `scoring/aggregate.py` — Wilson + bootstrap 95% CIs, writes `results/HEADLINE.md`
 
 Each runner is **idempotent + resumable**: re-running picks up where it stopped. Per-task results stream into `results/<row>/per_instance.csv` as they complete, so a crash mid-run loses at most one task. Trajectories under `results/<row>/trajectories/<instance_id>.json` for audit.

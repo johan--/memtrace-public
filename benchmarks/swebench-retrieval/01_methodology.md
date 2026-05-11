@@ -68,43 +68,38 @@ Repos missing from n=100 (`mwaskom/seaborn`, `pallets/flask`, `psf/requests`) co
 
 ---
 
-## 5. The four rows — frozen specs
+## 5. The three rows — frozen specs
 
-> **Amendment** (post-`7a5f49b`, pre-results): the Vector row now has two variants. Original `vector_query.md` is variant A (Memtrace's default embedder); new `vector_query_coderankembed.md` is variant B (`nomic-ai/CodeRankEmbed`, public SOTA). Both report symmetrically. This expansion is declared before any retrieval has been run; the per-variant prompt files are byte-identical except for the embedder, query-prefix, and dimension fields.
+> **Amendment** (post-`7a5f49b`, pre-results): the Vector row is now an ablation of the Memtrace row, not a separate pipeline. Same indexer (Memtrace native Rust + ONNX), same embedder (Jina-code), same chunking — the only differences are (a) RRF weights at fusion, and (b) tool inventory available to the LM. This replaces the original sentence-transformers-based Vector variants A+B (and the CodeRankEmbed comparison), which proved both slow and methodologically noisy.
 
-### Vector row — variant A (default embedder)
-- **Indexer**: chunk every source file into 500-line non-overlapping chunks at index time. Skip binary files. Skip `tests/`, `docs/`, `node_modules/` (configurable; documented).
-- **Embedder**: Memtrace's default embedder (model + dim captured in `prompts/vector_query.md` after first run via `embed_diag`).
-- **Query**: `problem_statement` text, embedded with the same model.
-- **Retrieval**: cosine top-K such that cumulative chunk tokens ≤ 27,000 (cl100k_base), matching Princeton's BM25-27K budget.
-- **File set**: union of chunks' source files.
-
-### Vector row — variant B (CodeRankEmbed)
-- **Indexer**: identical to variant A (same chunks, same exclusions).
-- **Embedder**: `nomic-ai/CodeRankEmbed` (137M, 768-dim, ICLR 2025). Run locally via `sentence-transformers`; no API spend on embedding.
-- **Query**: `problem_statement` prefixed with `"Represent this query for searching relevant code: "` per the paper.
-- **Retrieval**: same token budget as variant A.
-- **File set**: union of chunks' source files.
-- **Why**: pre-empts the "weak embedder" critique. The two variants share everything except the embedder model — direct ablation of embedding quality.
+### Vector row
+- **Indexer**: Memtrace ≥ 0.3.92, default tier, per-repo `.memdb` pinned to the instance's `base_commit`. **Same `.memdb` shared with the Memtrace row.**
+- **Embedder**: Memtrace's default — `jinaai/jina-embeddings-v2-base-code` (161M, 768-dim).
+- **Harness**: Claude Code `-p` (`--bare`), `claude-sonnet-4-6`, temperature 0, max_tokens 8192, no retries.
+- **Tools allowed**: `mcp__memtrace__find_code` (only). **Disallowed**: every other Memtrace MCP tool, Bash, Grep, Glob, Read, Edit, Write.
+- **RRF weights** (set per-invocation via env): `VECTOR=1.0, BM25=0.0, EXACT=0.0, GRAPH=0.0` — zeroes every leg except dense semantic at the fusion stage.
+- **System prompt**: frozen — see `prompts/vector_query.md`.
+- **Turn limit**: 30 turns.
+- **File set**: union of `file_path` fields across all `find_code` results the agent cites in its final JSON.
 
 ### Agentic row
-- **Harness**: Claude Code itself, headless mode.
-- **Model**: `claude-sonnet-4-6`, temperature 0, max_tokens 8192, no retries.
-- **Tools allowed**: Bash, Grep, Glob, Read. **Disallowed**: any Memtrace MCP tools, any vector store, any Edit/Write.
+- **Harness**: Claude Code `-p` (`--bare`), `claude-sonnet-4-6`, temperature 0, max_tokens 8192, no retries.
+- **Tools allowed**: Bash (read-only subset), Grep, Glob, Read. **Disallowed**: any Memtrace MCP tool, any vector store, Edit, Write.
 - **System prompt**: frozen — see `prompts/agentic_system.md`.
 - **Turn limit**: 30 turns.
-- **File set**: the set of files the agent opened with `Read` plus any file paths it explicitly cited in its final answer.
+- **File set**: the set of files the agent opened with `Read` plus any file paths it explicitly cited in its final JSON.
 
 ### Memtrace row
-- **Indexer**: Memtrace ≥ 0.3.87, default tier, per-repo `.memdb` pinned to the same `base_commit` as the instance.
-- **Model**: `claude-sonnet-4-6`, temperature 0, max_tokens 8192, no retries.
-- **Tools allowed**: `find_code`, `find_symbol`, `get_symbol_context`, `get_impact`, `get_source_window`, `analyze_relationships`. **Disallowed**: Bash, Grep, Glob, Read, any vector store, any Edit/Write.
+- **Indexer**: Memtrace ≥ 0.3.92, default tier, **same `.memdb` shared with the Vector row.**
+- **Harness**: Claude Code `-p` (`--bare`), `claude-sonnet-4-6`, temperature 0, max_tokens 8192, no retries.
+- **Tools allowed**: `find_code`, `find_symbol`, `get_symbol_context`, `get_impact`, `get_source_window`, `analyze_relationships`. **Disallowed**: Bash, Grep, Glob, Read, any vector store, Edit, Write.
+- **RRF weights**: defaults (`EXACT=4.0, BM25=2.0, VECTOR=1.0, GRAPH=0.75`) — full hybrid + graph expansion.
 - **System prompt**: frozen — see `prompts/memtrace_query.md`.
 - **Turn limit**: 30 turns.
 - **File set**: the set of files cited by Memtrace tool calls and in the final answer.
 - **Symbol set**: the set of fully-qualified symbol names cited.
 
-**Parity**: all four rows (two Vector variants + Agentic + Memtrace) receive the **same `problem_statement` text** with **no `hints_text`** (hints can contain solution leakage). All are scored against the **same gold-file set** derived from `patch`. The two Vector variants share all parameters except the embedder. Agentic and Memtrace use the **same model and decoding params** for the LM-driven steps.
+**Parity**: all three rows receive the **same `problem_statement` text** with **no `hints_text`** (hints can contain solution leakage). All are scored against the **same gold-file set** derived from `patch`. Vector and Memtrace share corpus, indexer, embedder, and chunking — they differ only in RRF weights and tool inventory. Agentic shares model/decoding params with the other two but operates on the raw filesystem instead of the indexed graph.
 
 ---
 
@@ -140,7 +135,7 @@ Repos missing from n=100 (`mwaskom/seaborn`, `pallets/flask`, `psf/requests`) co
 | Partial credit | Binary hit/miss per instance; mean recall reported separately; Wilson 95% CI on both |
 | Embedder advantage | Vector row uses **the same embedder Memtrace uses** — no embedding-quality confound |
 | Tool-set asymmetry | Agentic and Memtrace both capped at 30 turns, same model, same decode params |
-| Hints leakage | All four rows see `problem_statement` only, no `hints_text` |
+| Hints leakage | All three rows see `problem_statement` only, no `hints_text` |
 | Harness drift | swe-bench/SWE-bench commit SHA pinned at run time |
 | Cost asymmetry | Per-row tokens + dollars logged; vendor list price on a named date |
 

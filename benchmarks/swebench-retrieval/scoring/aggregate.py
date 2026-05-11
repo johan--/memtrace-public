@@ -25,10 +25,10 @@ from pathlib import Path
 
 import pandas as pd
 
-from scoring.scorer import gold_files_from_patch, score_row
+from scoring.scorer import score_row
 
 HERE = Path(__file__).resolve().parent.parent
-ROWS = ["vector-default", "vector-coderankembed", "agentic", "memtrace"]
+ROWS = ["vector", "agentic", "memtrace"]
 
 
 def _load_row(row: str, dataset: pd.DataFrame) -> dict | None:

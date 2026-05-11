@@ -1,45 +1,53 @@
-# Vector row (variant A — Memtrace's default embedder) — frozen retrieval configuration
+# Vector row — frozen retrieval configuration
 
 **Status**: locked at pre-registration. Any change requires bumping the round version.
-**Variant identity**: this is variant A. Variant B is in `vector_query_coderankembed.md`. The two share every parameter except the embedder model.
+
+## What this row is
+
+Pure dense-vector (semantic) retrieval over the same indexed corpus the Memtrace row uses. **Same indexer, same embedder, same chunking** — the only difference vs the Memtrace row is that BM25, exact-symbol, and graph-expansion legs are zeroed at the RRF fusion stage, and the agent is restricted to `find_code` only.
+
+This is **architecturally cleaner than running a separate sentence-transformers pipeline**: it directly ablates "what does the graph add over pure vector retrieval?" on the same corpus, with no embedder confound.
 
 ## Indexing
 
 | Param | Value |
 |---|---|
-| Chunk size | 500 lines, non-overlapping |
-| File filter (include) | source code only — extensions matching the repo's primary languages per Memtrace's language scanner |
-| File filter (exclude) | `tests/`, `test/`, `docs/`, `examples/`, `.git/`, `node_modules/`, `vendor/`, `*.min.js` |
-| **Embedder model** | **`jinaai/jina-embeddings-v2-base-code`** — same model Memtrace uses internally for the semantic leg of its hybrid retrieval |
-| **Source** | https://huggingface.co/jinaai/jina-embeddings-v2-base-code (Apache-2.0) |
-| **Parameters** | 161M (BERT-base architecture, instruction-following) |
-| **Embedding dimension** | 768 |
-| **Inference** | local via `sentence-transformers >= 3.0`; no API spend on embedding |
-| **Pin** | HuggingFace revision SHA captured at run start in `run_meta.json` |
-| Distance metric | cosine similarity |
-| Store | flat in-memory index (numpy or hnswlib, configurable; reported in `results/vector/run_meta.json`) |
-
-## Query
-
-| Param | Value |
-|---|---|
-| Query text | exact `problem_statement` from the parquet, unmodified |
-| Query embedding | same embedder model + same preprocessing as index |
-| Hints text | **not included** (would leak solution-adjacent context) |
+| Indexer | Memtrace ≥ 0.3.92 |
+| Embedder | Memtrace's default: **`jinaai/jina-embeddings-v2-base-code`** (161M, 768-dim) |
+| Backend | ONNX Runtime (Memtrace's native pipeline) |
+| Chunking | per Memtrace's symbol-level scanner (AST-anchored, not 500-line slices) |
+| Index state | shared with the Memtrace row — single `.memdb` per `(repo, base_commit)` |
 
 ## Retrieval
 
 | Param | Value |
 |---|---|
-| Top-K policy | grow K until cumulative chunk tokens ≥ 27,000 (cl100k_base), then stop |
-| Token counter | `tiktoken` with `cl100k_base` encoder |
-| Tie-break | lower instance-stable hash of chunk identifier wins |
-| File set | union of source files of all chunks in the retrieved set |
-| No LM in the loop | retrieval is pure vector; no model re-ranking |
+| Tool | `mcp__memtrace__find_code` (only) |
+| RRF weights | **`VECTOR=1.0, BM25=0.0, EXACT=0.0, GRAPH=0.0`** — zeroes every leg except dense semantic |
+| Env vars set per invocation | `MEMTRACE_RRF_BM25_WEIGHT=0.0`, `MEMTRACE_RRF_EXACT_WEIGHT=0.0`, `MEMTRACE_RRF_GRAPH_WEIGHT=0.0`, `MEMTRACE_RRF_VECTOR_WEIGHT=1.0` |
+| Query | exact `problem_statement` from parquet, no `hints_text` |
+| Result extraction | union of `file_path` fields across all `find_code` calls in the agent's session |
 
-## Why these choices
+## LM-driver
 
-- **500-line chunks, no overlap**: standard RAG default; reviewers cannot accuse us of an ablation choice.
-- **27K token budget**: matches Princeton's BM25-27K setting in the SWE-bench paper. Direct comparability to published numbers.
-- **No LM re-ranking**: keeps the vector row as a clean baseline. Adding a re-ranker would be a separate ablation row, not the vector baseline.
-- **Excluding `tests/` etc.**: keeps the corpus to actual implementation code. The same exclusion is applied to the agentic row (via prompt) and the Memtrace row (via the indexer's default).
+| Param | Value |
+|---|---|
+| Harness | Claude Code `-p` (`--bare`) |
+| Model | `claude-sonnet-4-6` |
+| Temperature | 0, max_tokens 8192, no retries |
+| Turn limit | 30 |
+| Tools allowed | `mcp__memtrace__find_code` |
+| Tools disallowed | every other Memtrace MCP tool, Bash, Grep, Glob, Read, Edit, Write |
+| System prompt | frozen — see `runners/run_vector.py:SYSTEM_PROMPT` |
+
+## Why this design
+
+- **Same embedder as the Memtrace row.** A reviewer asking "did you use a SOTA code embedder?" gets the answer "We used Jina-code-v2-base-code, the same model Memtrace ships with. A separate embedder ablation is a follow-up round, not part of this comparison."
+- **Direct ablation.** The only differences vs the Memtrace row are RRF weights and tool inventory. Same code path, same corpus, same parsing.
+- **No Python embedding pipeline.** Earlier sentence-transformers approach used 40+ GB RAM on MPS and 30+ min/instance on CPU. Memtrace's native Rust+ONNX pipeline (which already runs on this machine) does the same work in minutes with <8 GB RAM.
+
+## What this row does NOT do
+
+- **No CodeRankEmbed comparison.** Pluggable embedders is a future feature; this round uses Memtrace's shipped Jina-code only.
+- **No BM25-only baseline.** Could be added as a fourth row by flipping the weights (`BM25=1, others=0`); not in scope for this round.
+- **No graph expansion.** That's the wedge the Memtrace row introduces.

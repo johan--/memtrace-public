@@ -33,8 +33,7 @@ HERE = Path(__file__).resolve().parent.parent
 VENV_PY = HERE / ".venv" / "bin" / "python"
 
 VARIANTS = [
-    ("vector-default", ["-m", "runners.run_vector", "--embedder", "jinaai/jina-embeddings-v2-base-code", "--row", "vector-default"]),
-    ("vector-coderankembed", ["-m", "runners.run_vector", "--embedder", "nomic-ai/CodeRankEmbed", "--row", "vector-coderankembed"]),
+    ("vector", ["-m", "runners.run_vector"]),
     ("agentic", ["-m", "runners.run_agentic"]),
     ("memtrace", ["-m", "runners.run_memtrace"]),
 ]
@@ -51,7 +50,8 @@ def main() -> int:
     ap.add_argument("--dry-run", action="store_true", help="Only run first --dry-n instances per row")
     ap.add_argument("--dry-n", type=int, default=3)
     ap.add_argument("--skip-row", action="append", default=[],
-                    choices=[v[0] for v in VARIANTS])
+                    choices=[v[0] for v in VARIANTS],
+                    help="Repeatable. e.g. --skip-row memtrace")
     ap.add_argument("--max-budget-usd", type=float, default=2.0,
                     help="per-instance hard cap (agentic + memtrace only)")
     args = ap.parse_args()
@@ -71,15 +71,14 @@ def main() -> int:
         print("\nABORT — repo clone failed.")
         return rc
 
-    # 3. Each row
+    # 3. Each row — all three use Claude Code + API budget
     limit_args = ["--limit", str(args.dry_n)] if args.dry_run else []
     for row_name, base_cmd in VARIANTS:
         if row_name in args.skip_row:
             print(f"\n=== skipping row: {row_name} ===")
             continue
         cmd = [str(VENV_PY), *base_cmd, "--csv", str(args.csv), *limit_args]
-        if row_name in ("agentic", "memtrace"):
-            cmd += ["--max-budget-usd", str(args.max_budget_usd)]
+        cmd += ["--max-budget-usd", str(args.max_budget_usd)]
         rc = _run(cmd)
         if rc != 0:
             print(f"\nWARN — row {row_name} exited rc={rc}; continuing to next row")
