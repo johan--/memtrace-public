@@ -103,12 +103,30 @@ The final writeup lives outside this folder; this folder produces its inputs.
 
 ---
 
-## Next steps
+## Running it
 
-1. Phase-1 commit lands (this folder, no `results/` content).
-2. Verify Memtrace ≥ 0.3.87 on the runner machine.
-3. Implement Phase-2 runners (one script per row, writes into `results/`).
-4. Run on n=25 first — quick sanity pass with the headline sample.
-5. Run on n=100 — defensible Wilson CIs.
-6. Score with Princeton's `eval_retrieval`; write the comparison table.
-7. Publish off-leaderboard (blog/preprint), link this folder's pre-registration commit.
+Drop your Anthropic API key in the shell and call the entry point:
+
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...
+bash run_benchmark.sh --dry-run          # 3 instances per row, real cost projection
+bash run_benchmark.sh                    # sanity: n=25, ~$45–120
+bash run_benchmark.sh --full             # appendix: n=100, ~$180–600
+```
+
+Behind the scenes:
+
+1. `runners/check_env.py` — verifies API key, Memtrace ≥ 0.3.87, Claude Code, MCP, disk, deps
+2. `runners/clone_repos.py` — clones each unique `(repo, base_commit)` into `work/repos/`
+3. `runners/run_vector.py` — local inference (Jina-code variant A, CodeRankEmbed variant B). No API spend
+4. `runners/run_agentic.py` — Claude Code `-p` headless, Bash/Grep/Glob/Read, 30 turns, `--max-budget-usd` per task
+5. `runners/run_memtrace.py` — Claude Code `-p` headless, Memtrace MCP tools only, 30 turns
+6. `scoring/aggregate.py` — Wilson + bootstrap 95% CIs, writes `results/HEADLINE.md`
+
+Each runner is **idempotent + resumable**: re-running picks up where it stopped. Per-task results stream into `results/<row>/per_instance.csv` as they complete, so a crash mid-run loses at most one task. Trajectories under `results/<row>/trajectories/<instance_id>.json` for audit.
+
+To skip a row (e.g. before MCP server is up):
+
+```bash
+bash run_benchmark.sh --skip-memtrace
+```
