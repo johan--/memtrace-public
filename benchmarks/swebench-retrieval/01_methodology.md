@@ -160,3 +160,21 @@ After Phase 2 completes, the writeup includes:
 - Ts-go retrieval (the source benchmark could not be publicly identified at pre-registration time — no matching dataset on HuggingFace, in `swe-bench/experiments`, or in any vendor/conference talk we located. If the source surfaces later, a sibling `benchmarks/tsgo-retrieval/` folder will be added with the same hygiene).
 - Comparison to BM25 retrieval as a fourth row (could be added as appendix; not blocking).
 - Statistical significance testing across rows (we report CIs, not p-values; reviewers can compute their own from per-instance data).
+
+---
+
+## 10. Phase 2 status (run deferred — explicit gates)
+
+**Phase 2 has been intentionally deferred** pending the methodology gates below. The runnable harness is complete and committed; the run will fire once these are addressed. Listed here so the deferral is documented at pre-registration time, not retrofitted later.
+
+| # | Gate | Reason | Action |
+|---|---|---|---|
+| G1 | Add an **independent commodity vector baseline** — ChromaDB or Qdrant + sentence-transformers, one-shot, no agent loop | The current `vector` row is Memtrace's own pipeline with non-vector RRF legs zeroed; that is a within-system ablation, not an independent baseline. The brutal critique "you compared Memtrace to Memtrace" is fair and lethal without a commodity reference | Build a 4th row (`vector-commodity`) on a server box; the M3 Max could not host it at scale during smoke testing |
+| G2 | Bump sample size from n=25/100 to **n ≥ 300** | Wilson 95% CI at n=25 spans ±18pp. At n=100 still ±10pp. Below ~300 there is no statistically distinguishable claim available — only directional pilot data | Amendment commit extending the pre-registered instance list to n=300; same seed=42 stratified-random protocol |
+| G3 | Report **hunk-level recall** in addition to file-level | File-level is the easiest metric. Fix-localization papers report hunk-level. Reporting only file-level is a known soft spot a reviewer will hit | Scorer already supports the parse; aggregator needs the additional column |
+| G4 | Run a **train/test contamination probe** | Sonnet 4.6 was trained on GitHub through 2025; Verified `created_at` runs 2013–2023. The model has almost certainly seen these PRs. Without a probe, the result is partly "model recall," not retrieval quality | Sample N instances, prompt the model for the fix-file set with NO codebase access. If recall > random baseline, contamination is non-trivial |
+| G5 | Hand the harness to an **independent runner**, or **co-author with an unaffiliated researcher** | Single-author benchmarks where the author owns one of the compared systems are heavily discounted regardless of pre-registration | First contact: UIUC live-SWE-agent group (currently leading Verified at 79.2% on resolve@1; open-source; natural co-author audience for a retrieval-only paper) |
+
+Disclosing these at pre-registration time is part of the methodology, not an admission of failure. **Running the benchmark with a weak Vector baseline and n=25 would have produced numbers that a brutal reviewer (and the field) would have rightly discounted.** Better to defer and address than to ship and be picked apart.
+
+The pre-registration commit (`7a5f49b`) and all subsequent runner / methodology commits remain in the public git history. When Phase 2 fires, results in `results/` will be timestamped after those commits — preserving the "instance IDs locked before any run" guarantee.

@@ -1,11 +1,31 @@
 # SWE-bench retrieval — Vector vs Agentic vs Memtrace
 
-**Status**: Phase 1 (pre-registration) — bundle committed; no run yet.
+**Status: Pre-registered (Phase 1 complete). Phase 2 run is intentionally deferred — see "Run status" below.**
 **Date generated**: 2026-05-11
 **Owner**: Memtrace / syncable-dev
 **Question this round answers**: on SWE-bench Verified, how does Memtrace's graph-typed retrieval compare to vector search and Claude-Code-style agentic search on the same problem statements?
 
-This folder is the **complete, self-contained pre-registration artefact** — public so anyone can audit, reproduce, and challenge the methodology before any results land. Every file required to re-derive the n=25 + n=100 instance sets, every frozen prompt, and the one-shot reproduction script. Phase 2 (the actual run) populates `results/`.
+This folder is the **complete, self-contained pre-registration artefact** — public so anyone can audit, reproduce, and challenge the methodology before any results land. Every file required to re-derive the n=25 + n=100 instance sets, every frozen prompt, and the one-shot reproduction script. Phase 2 (the actual run) will populate `results/` once the gates below are cleared.
+
+---
+
+## Run status
+
+**Phase 2 run is deferred. Not abandoned — paused on purpose until we can pass a brutal reviewer pass.**
+
+What's gated:
+
+| Gate | Why it matters | Status |
+|---|---|---|
+| **Independent commodity vector baseline** (ChromaDB / Qdrant + standard sentence-transformers, one-shot, no agent loop) running on a server box | The current `vector` row is Memtrace's own pipeline with non-vector RRF legs zeroed — it is an internal ablation, not an independent vector baseline. A brutal reviewer would (correctly) point out that "Memtrace beats Memtrace-with-graph-off" is not the same claim as "Memtrace beats vector retrieval" | Not yet built — the M3 Max can't host the commodity vector pipeline at scale; needs a beefier machine |
+| **Sample size ≥ 300** | Wilson 95% CI at n=25 spans ±18pp. At n=100 still ±10pp. Below ~300, every "result" is statistical theater | Pre-registration covers n=25 + n=100; needs an amendment commit for n=300+ |
+| **Hunk-level recall in addition to file-level** | File-level is the easiest metric. Fix-localization papers report hunk-level. Reporting only file-level is a known soft spot | Scorer supports it (`scoring/scorer.py`); needs aggregator wiring |
+| **Train/test contamination probe** | Sonnet 4.6 was trained on GitHub through 2025; Verified `created_at` runs 2013–2023. The model has almost certainly seen these PRs. Need a probe that quantifies how much of the result is "model recall" vs "retrieval system quality" | Not built |
+| **Independent runner or co-author** | Single-author benchmarks where the author owns one of the systems being compared are heavily discounted by the field, regardless of pre-registration. Path forward: hand the runnable harness to an unaffiliated party, or co-author with an academic (UIUC live-SWE-agent group is the natural target) | Not started |
+
+When those clear, the rest of the harness is already wired: env check, repo cloner, three runners, scorer with Wilson + bootstrap CIs, aggregator, one-line entry point. `bash run_benchmark.sh --full` is one command away from producing results — we just won't run it until the gates above are honestly addressed.
+
+The pre-registration commit (linked below) stays load-bearing. Instance IDs, sampling seed, prompts, methodology — all locked at commit time, before any retrieval has executed. That guarantee survives the deferral.
 
 ---
 
