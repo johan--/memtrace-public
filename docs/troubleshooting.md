@@ -19,6 +19,7 @@ find your symptom, follow the fix.
 - [Vector dim mismatch error](#vector-dim-mismatch-error)
 - [Windows-specific issues](#windows-specific-issues)
 - [Daemon won't shut down cleanly](#daemon-wont-shut-down-cleanly)
+- [Multiple `memtrace` processes accumulating RAM / CPU](#multiple-memtrace-processes-accumulating-ram--cpu)
 
 ## Install fails
 
@@ -600,6 +601,76 @@ pkill -f "memtrace mcp"
 
 If a port is still bound after the process is dead, restart the
 machine (the OS will release the socket on next boot).
+
+## Multiple `memtrace` processes accumulating RAM / CPU
+
+**Symptom.** Activity Monitor / Task Manager shows two or more
+`memtrace` processes for the same project, combined RSS climbing
+into the multi-GB range. Common variants users have reported:
+
+- 2–4 `memtrace mcp` processes, each at 500 MB – 6 GB resident.
+- One `memtrace start` process pegging a single CPU core at 100%
+  for hours, total CPU time in the tens of thousands of seconds.
+- `~/.orbit/tmp/memtrace-daemon-state.json` (or the equivalent
+  supervisor heartbeat file in your orchestration tool) showing
+  `{"pid": null, "status": "healthy"}` while processes are very
+  much alive.
+
+**Why this happens (current v0.4.60).** The daemon does not yet:
+
+1. **Refuse to start when another daemon owns the data dir.** Every
+   `memtrace mcp` invocation spawns a fresh worker — no PID-file lock
+   on `<data_dir>/.memdb/`.
+2. **Cap its own RAM ceiling.** No `RLIMIT_AS` (Linux/macOS) or
+   `JobObject` (Windows) bound on the long-running process.
+3. **Cap its own CPU budget.** No `RLIMIT_CPU` — a wedged loop
+   pegs one core indefinitely.
+4. **Self-terminate after an idle window.** If your supervisor
+   (Orbit, systemd unit, launchctl) dies, the worker keeps running.
+5. **Cross-check the supervisor's heartbeat.** A stale
+   `daemon-state.json` doesn't trigger a worker self-suicide.
+
+The v0.4.60 memory-footprint round shrank per-process RSS by
+~15%, but does not address this class of bug.
+
+**Mitigation right now.** If you see this, kill the older processes
+manually:
+
+```bash
+# macOS / Linux
+ps -ef | grep memtrace | grep -v grep
+# pick the OLDER PID(s) and kill them
+kill <pid>
+# escalate if it doesn't die
+kill -9 <pid>
+
+# Windows PowerShell
+Get-Process memtrace | Sort-Object StartTime
+# kill all but the newest
+Stop-Process -Id <pid>
+```
+
+Then restart your supervisor cleanly:
+
+```bash
+memtrace stop && memtrace start
+```
+
+If you're orchestrating Memtrace via an external supervisor
+(Orbit, Claude Code's session manager, a CI runner), check that
+supervisor's process tree too — the daemon-state file going stale
+typically means the supervisor itself crashed silently.
+
+**Permanent fix.** Tracked for an upcoming release. The fix
+introduces a process memory ceiling (`MEMTRACE_MAX_RSS_MB`,
+default 4 GB), a CPU-time ceiling (`MEMTRACE_MAX_CPU_SECS`,
+default disabled), an idle-shutdown timer
+(`MEMTRACE_IDLE_SHUTDOWN_SECS`, default 1 hour), a spawn-time
+lock so a second daemon refuses to start when one already owns
+the data dir, and a supervisor-heartbeat watchdog
+(`MEMTRACE_SUPERVISOR_HEARTBEAT_FILE`) so the worker
+self-terminates cleanly if its orchestrator dies. Watch the
+release notes for confirmation.
 
 ## Still stuck?
 

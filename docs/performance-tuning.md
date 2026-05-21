@@ -58,6 +58,50 @@ the tier) or by setting the individual env vars in
 
 ## Common scenarios
 
+### v0.4.60 memory-footprint baseline
+
+The defaults moved in v0.4.60. Per-workload median peak RSS on a
+1000-query mempalace bench (M3 Max, 14 cores), median of 3 runs:
+
+| Workload | v0.4.50 | v0.4.60 | Δ |
+|---|---:|---:|---:|
+| Cold reindex peak RSS | 538 MB | **457 MB** | **−15.2%** |
+| Cold reindex variance (spread of 3) | 145 MB | **4 MB** | **−97%** |
+| Concurrent rerank+embed peak RSS | 1514 MB | **1289 MB** | **−14.9%** |
+| Concurrent throughput | 11.04 qps | 11.00 qps | flat |
+| 1k find_symbol p50 / acc@1 | 0.24 ms / 96.6% | identical | bit-identical |
+| Binary size (release) | 144 MB | **85 MB** | **−41%** |
+
+The under-reported headline is the **variance collapse**. Pre-v0.4.60
+the same workload on the same host swung 29% of median between runs;
+now it's within 1% of median. Container memory limits are sizeable
+from a single number — pick ~600 MB for single-repo / ~2 GB for
+concurrent-rerank, no safety margin guessing required.
+
+What changed (most operators set nothing — defaults move):
+
+- **mimalloc 3 is now the default allocator** on every target except
+  musl and Windows MSVC (which keep the system allocator unchanged).
+  `--no-default-features` falls back to jemalloc if you need the
+  rebuild path.
+- **Single in-RAM hot cache (`MEMTRACE_UNIFIED_CACHE_MB`, default 256
+  MB)** replaces several per-subsystem caches that previously grew
+  independently. W-TinyLFU eviction. Raise to `512` / `1024` on
+  RAM-rich hosts; `0` disables it.
+- **ORT memory-arena toggle** (`MEMTRACE_ORT_LOW_RSS=1`) on every
+  ONNX session site (rerank, sparse encoder, embedder). Empirical:
+  −2.7% RSS for −19% throughput on our shipping model sizes — off
+  by default; on if you're running much smaller custom models where
+  the arena dwarfs the model.
+- **Other internals.** Shared tree-sitter parser pool, string
+  interning on dup-heavy node fields, inline-small-string for short
+  identifiers, bitmap-backed adjacency primitive. None of this
+  changes the user surface; the on-disk format and the MCP JSON
+  wire format are byte-identical to v0.4.50.
+
+Full numbers + cross-platform compile gates:
+[release notes](v0.4.60-release-notes.md).
+
 ### "16 GB M1/M2/M3 Pro — Memtrace is eating my RAM"
 
 This was the v0.3.30-and-earlier failure mode: 27+ GB resident

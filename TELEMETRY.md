@@ -13,7 +13,7 @@ and how to turn it off.
 > - We never collect source code, file contents, file paths beyond what's
 >   needed for crash fingerprints, symbol names, or embeddings.
 > - We collect: app starts, indexing/embedding durations, panic reports,
->   and `WARN`/`ERROR` log lines from our own crates.
+>   PR workflow counters, and `WARN`/`ERROR` log lines from our own crates.
 > - Set `MEMTRACE_TELEMETRY=off` to disable it completely.
 > - Default is **on for crashes and errors, on for usage events**. Opt-out
 >   is one env var or one config-file line.
@@ -28,13 +28,17 @@ the same Bearer session token your install already uses for the heartbeat.
 
 ### 1. Usage events (`telemetry_events`)
 
-One row per discrete signal the binary emits. Today the only events are:
+One row per discrete signal the binary emits. Today the supported events are:
 
 | Event | When it fires | Data attached |
 |---|---|---|
 | `start` | Every `memtrace start` / `memtrace mcp` invocation | subcommand, transport mode |
 | `index_complete` | After Phase-1 indexing finishes | duration_ms, repo count |
 | `embed_complete` | After Phase-2 embedding finishes | duration_ms, embedding count |
+| `pr_review_completed` | After `memtrace code-review` finishes a PR review run | posted/dry-run boolean, watch boolean, comment count, finding count, graph mode, minimum severity, severity-count buckets, source-count buckets |
+| `pr_watch_registered` | When `memtrace code-review --post --watch` registers a local PR watch | comment count, graph mode, local watch status |
+| `pr_watch_synced` | When `memtrace start`, `memtrace mcp`, or `memtrace pr sync` polls watched PRs | aggregate watch counts by status: awaiting response, human replied, approved, changes requested, stale after push, merged, closed, poll errors |
+| `pr_watch_poll_error` | When a watched PR poll fails | coarse error kind only: `rate_limited`, `token`, `github`, `parse`, or `unknown` |
 
 Each row also carries: a stable per-machine `device_id` (the same one you
 see in your `~/.memtrace/credentials.json`), the binary version (e.g.
@@ -45,6 +49,12 @@ the resource detector picked. Nothing else.
 indexing got slower in a recent release, and whether the auto-tuned
 `light/standard/heavy` tiers are landing in the right buckets on real
 hardware. It's the telemetry equivalent of a daily check-in graph.
+
+For PR review telemetry, the local watcher may store PR coordinates in
+`~/.memtrace/pr-watches.json` so it can poll GitHub later, but the telemetry
+payload deliberately does not include those coordinates. PR URLs,
+repository owner/name, branch names, commit SHAs, file paths, comment bodies,
+reviewer identities, and discussion text stay local.
 
 ### 2. Errors (`telemetry_errors`)
 
@@ -100,6 +110,8 @@ data model on the receiving end has no column to put them in.
 - ❌ Symbol names from your codebase
 - ❌ Embeddings, BM25 indices, or any derived data from your code
 - ❌ Repository names, paths, or remote URLs
+- ❌ GitHub PR URLs, issue/review/comment bodies, reviewer identities, or
+  pull request discussion text
 - ❌ Branch names, commit messages, or git history
 - ❌ Any path that points inside the indexed repo
 - ❌ Environment variables (the sanitiser strips token-shaped strings,

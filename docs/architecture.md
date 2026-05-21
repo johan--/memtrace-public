@@ -135,9 +135,10 @@ different temporal questions.
 ## What the daemon doesn't do
 
 - **It doesn't send your code anywhere.** Indexing, embedding,
-  reranking — all local. Only license-validation and (opt-in)
-  aggregate telemetry pings cross the network. See
-  [`privacy-and-telemetry.md`](privacy-and-telemetry.md).
+  reranking — all local. Only license-validation pings and
+  product-telemetry pings (sanitised crash / error / lightweight
+  usage events; on by default, one env var to disable) cross the
+  network. See [`privacy-and-telemetry.md`](privacy-and-telemetry.md).
 - **It doesn't depend on a database service.** MemDB is embedded — a
   single binary, no Postgres/SQLite to set up.
 - **It doesn't talk to LLM APIs.** Memtrace's pipeline uses only

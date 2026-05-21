@@ -1,11 +1,11 @@
 # Privacy and telemetry
 
-A practical summary of what stays on your machine, what's optionally
-sent to us, and how to turn anything off. The exhaustive
-machine-readable version lives in
-[`PRIVACY.md`](../PRIVACY.md) and [`TELEMETRY.md`](../TELEMETRY.md)
-at the repo root — those are the contractual versions for legal /
-compliance reviews. This doc is the user-friendly explainer.
+A practical summary of what stays on your machine, what's sent to us,
+and how to turn anything off. The exhaustive machine-readable version
+lives in [`PRIVACY.md`](../PRIVACY.md), [`TELEMETRY.md`](../TELEMETRY.md),
+and [`telemetry-compliance-datasheet.md`](telemetry-compliance-datasheet.md)
+— those are the contractual versions for legal / compliance reviews. This
+doc is the user-friendly explainer.
 
 ## What never leaves your machine
 
@@ -25,8 +25,10 @@ compliance reviews. This doc is the user-friendly explainer.
 
 ## What does cross the network
 
-Three categories. Two are required for the product to work; one is
-optional.
+Four categories. License validation is required for the product to
+work; product telemetry is on by default with a one-env-var kill
+switch; the weekly receipt is off by default and opt-in; the model
+download is inbound only on first run.
 
 ### 1. License validation (required)
 
@@ -50,108 +52,173 @@ If your machine is offline, Memtrace runs in a grace-period mode
 for 24 hours before requiring re-validation. CI / sandboxed
 environments use `MEMTRACE_LICENSE_KEY=<key>` instead of device flow.
 
-### 2. Crash and error reports (required, anonymised)
+### 2. Product telemetry (on by default — opt-out)
 
-When the daemon crashes or hits a fatal error, we receive a
-sanitised report:
+Memtrace ships with telemetry enabled. It's there to catch crashes,
+regressions, and performance issues across the user base — the kind
+of bugs that otherwise only surface when someone takes the time to
+file an issue. One environment variable turns it off completely.
 
-- The error string (with all paths replaced by `<path>` placeholders)
-- Stack trace function names (no source locations beyond the function
-  name itself)
-- The product version, OS, arch
-- The same anonymous device hash
+Three streams flow through a single endpoint
+(`https://memtrace.io/api/telemetry/ingest`, HTTPS, authenticated
+with the same Bearer session token your install already uses):
 
-It does NOT contain:
+| Stream | When | What's in it |
+|---|---|---|
+| **Usage events** | `memtrace start` / `memtrace mcp` invocation, end of indexing, end of embedding, PR review/watch lifecycle | Subcommand, transport mode, `duration_ms`, integer counts, graph/review mode enums, PR watch status counters. No names, no content, no PR URLs, no comments. |
+| **Error reports** | Any `WARN` / `ERROR` log line from Memtrace's own crates | Sanitised log message, tracing target, level, content fingerprint. Recurring errors collapse to one row with an `occurrences` counter. |
+| **Crash reports** | Panic hook captures, written synchronously so even a hard exit leaves a breadcrumb | Sanitised panic message, `file:line` inside the Memtrace binary, sanitised Rust backtrace capped at 16 KB. |
 
-- Source code
-- File contents
-- Repo paths
-- User-supplied identifiers
+Every payload also carries: a stable per-machine `device_id`, the
+binary version, OS string, and host-tier score. Nothing else.
 
-This is what lets us actually fix bugs that hit you. The sanitiser
-is conservative: when in doubt, redact.
+**Sanitisation before anything ships.** Error messages, panic
+messages, and backtraces pass through a sanitiser that:
 
-### 3. Aggregate usage telemetry (OPT-IN, off by default)
+- Collapses any absolute path under `$HOME` to `~`
+- Replaces token-shaped strings (regex `[A-Za-z0-9_+/=-]{40,}`) with
+  `<redacted-token>` — catches API tokens, session tokens, JWTs,
+  GitHub PATs, base64-encoded secrets
+- Replaces email addresses with `<redacted-email>`
 
-If — and only if — you opt in during `memtrace start`, the daemon
-sends a daily aggregate ping. The ping is one HTTPS POST per 24h
-containing aggregate counts:
+The sanitiser source is public at
+[`crates/memtrace-mcp/src/telemetry.rs`](https://github.com/syncable-dev/memtrace-public/blob/main/crates/memtrace-mcp/src/telemetry.rs).
+The sanitiser is conservative but not magic — it doesn't strip
+directory structure below `$HOME`, and it doesn't semantically
+classify content. If your data classification policy treats *any*
+path component below `$HOME` as sensitive (for example, client
+codenames in directory names), set `MEMTRACE_TELEMETRY=off`. See
+the [compliance datasheet](telemetry-compliance-datasheet.md) §4.1
+for the full discussion of the sanitiser's limits.
 
-| Category | What's in it |
-|---|---|
-| Identity | Device hash (same one as license) |
-| Environment | Product version, OS, architecture, install method |
-| Usage volume | Tool call counts (how many `find_code` calls in 24h, etc.), tokens-saved estimates |
-| Quality | Top 5 commands with low / zero savings (so we know what to improve), parse failure counts |
-| Ecosystem mix | Tool category distribution (e.g. git 45%, python 20%, …) |
-| Retention | Days since first use, active days in last 30 |
-| Configuration | Whether `config.toml` exists, count of excluded commands |
-| Economics | Estimated USD savings (based on public token pricing) |
+**Specifically NOT collected**, ever, under any configuration:
 
-Specifically NOT collected even when telemetry is ON:
+- Source code or file contents
+- Symbol names from your codebase
+- Embeddings, BM25 indices, or any derived data from your code
+- Repository names, paths, or remote URLs
+- Branch names, commit messages, or git history
+- Any path that points inside the indexed repo (except where it
+  appears in a sanitised crash backtrace — see above)
+- Environment variable values directly
+- IP addresses on the server side (request logs kept 7 days for
+  abuse mitigation only)
 
-- Source code
-- File paths
-- Symbol names
-- Command arguments (only command names, like "git" or "cargo")
-- Query strings
-- Anything from your repo
+### 3. Weekly Memtrace Receipt (off by default — opt-in on memtrace.io)
 
-Top-command reports name only the tool ("git", "cargo", "pytest"),
-never the full command line.
+Separate from product telemetry. If you opt into weekly summary emails on your memtrace.io account dashboard, the usage heartbeat starts attaching a small symbol-name surface (the symbols the email needs to render). This is the **only** configuration under which symbol names ever cross the network from your machine. Off by default for every new account.
+
+Two ways to turn it off:
+
+- **Account toggle** on memtrace.io — flip it off and the heartbeat stops attaching symbol names server-wide for your account.
+- **Per-machine env var** — `export MEMTRACE_NO_REMOTE_RECEIPT=1` on a specific machine. The heartbeat from that machine carries no symbol-name surface even if the account toggle is on, and the server skips that week's email send.
+
+For regulated environments (financial, healthcare, audit) the recommended posture is to leave the account toggle off **and** set `MEMTRACE_NO_REMOTE_RECEIPT=1` on the developer machine as defence in depth.
+
+### 4. Embedding model download (first run only, inbound)
+
+The first time you run Memtrace, it downloads the embedding model
+(~340 MB ONNX) and the cross-encoder reranker (~75 MB int8) from
+HuggingFace Hub via the `fastembed` library. This is an **inbound
+download only** — nothing about your machine is uploaded. Cached
+to `~/.cache/fastembed/` after first run.
 
 ## How to control telemetry
 
-```bash
-memtrace telemetry status      # current state — granted, disabled, or unset
-memtrace telemetry enable      # explicit consent (interactive prompt)
-memtrace telemetry disable     # withdraw consent — stops collection immediately
-memtrace telemetry forget      # disable + delete local telemetry data + request server-side erasure
-```
-
-Hard env override (highest precedence; works even if consent is
-granted):
+### Disable for the current process
 
 ```bash
-export MEMTRACE_TELEMETRY_DISABLED=1
+MEMTRACE_TELEMETRY=off memtrace start
 ```
 
-If you set this in your shell init, telemetry is off everywhere
-regardless of what the consent state says.
+Accepted off-values: `off`, `0`, `false`, `disabled`, `no` (case
+insensitive). Anything else (including unset) keeps telemetry on.
 
-## How to inspect what would be sent
-
-Telemetry events are buffered locally before being sent. While the
-daemon is running:
+### Disable permanently (shell profile)
 
 ```bash
-ls -la ~/.memtrace/telemetry/
+# ~/.zshrc / ~/.bashrc
+export MEMTRACE_TELEMETRY=off
 ```
 
-You can `cat` any pending event file — it's JSON, human-readable.
-If you opt out, this directory doesn't exist or is empty.
+### Disable permanently (MCP client config)
+
+```json
+{
+  "command": "memtrace",
+  "args": ["mcp"],
+  "env": { "MEMTRACE_TELEMETRY": "off" }
+}
+```
+
+Applies to Claude Code, Cursor, Codex, Windsurf, and any other MCP
+client that honours the `env` block.
+
+### What "disabled" actually does
+
+When `MEMTRACE_TELEMETRY=off` is set:
+
+- The panic hook still installs locally — so a crash in a disabled
+  session still leaves a `~/.memtrace/telemetry/queue.jsonl`
+  breadcrumb for your own debugging — but the flusher never ships
+  the file.
+- The `tracing` layer becomes a no-op for telemetry: `WARN`/`ERROR`
+  lines still print to stderr but are not queued.
+- The flusher exits immediately on startup. Zero network calls to
+  the telemetry endpoint.
+- Usage event callsites short-circuit before any data is
+  constructed.
+
+License validation and the heartbeat continue to run — they're
+required for the product to function. Only the telemetry endpoint
+goes quiet.
+
+## How to inspect what's in the queue before it ships
+
+Telemetry sits on disk before being flushed every 60 seconds. You
+can read it directly:
+
+```bash
+cat ~/.memtrace/telemetry/queue.jsonl | head -5
+```
+
+Each line is one record. The `kind` field is `event`, `error`, or
+`crash`. There is no separate raw buffer — what you see here is
+everything. If telemetry is off, the file isn't written.
 
 ## Default state
 
-| Item | Default |
-|---|---|
-| License validation | ON (required for the product to work) |
-| Crash + error reports | ON (anonymised) |
-| Aggregate usage telemetry | **OFF** — explicit opt-in required |
+| Item | Default | Controllable? |
+|---|---|---|
+| License validation | ON | Required — no opt-out (use offline grace period if needed) |
+| Product telemetry (events / errors / crashes) | ON | `MEMTRACE_TELEMETRY=off` disables completely |
+| Model download | ON (first run only) | Block `huggingface.co` after first run if needed |
 
-The opt-in prompt during `memtrace start` shows the full data list
-above and the URL of the privacy policy. You can decline and use
-the product fully.
+If you want telemetry disabled before the binary ever ships its
+first event, set `MEMTRACE_TELEMETRY=off` in your shell profile
+before running `memtrace start` for the first time.
 
 ## Where the data goes
 
-All telemetry endpoints terminate at our own infrastructure
-(`*.memtrace.io`), not third-party analytics services. The full
-data-handling commitments — retention, who has access, when it's
-deleted, GDPR rights — are in [`PRIVACY.md`](../PRIVACY.md). If
-your organisation has compliance requirements (SOC 2 questionnaire,
-DPA, etc.), email `privacy@memtrace.io` and we'll provide the
-documentation.
+All telemetry endpoints terminate on our own infrastructure
+(`*.memtrace.io`), operated by Syncable ApS in Denmark / EU. No
+third-party analytics SDKs are embedded in the binary — every byte
+of the pipeline is in the public repo at
+[`crates/memtrace-mcp/src/telemetry.rs`](https://github.com/syncable-dev/memtrace-public/blob/main/crates/memtrace-mcp/src/telemetry.rs).
+Storage: three Postgres tables (`telemetry_events`,
+`telemetry_errors`, `telemetry_crashes`). Access: admin dashboard
+at `https://memtrace.io/admin/analytics`, gated to `@syncable.dev`
+accounts only. We do not sell, share, or publish anonymised
+aggregates without notice.
+
+Right of erasure: email `support@syncable.dev` with the `device_id`
+visible in `~/.memtrace/credentials.json`. Erasure processed within
+30 days.
+
+If your organisation has compliance requirements (SOC 2
+questionnaire, DPA, GDPR Article 30 record), email
+`support@syncable.dev` and we'll provide the documentation. The
+formal version is [`telemetry-compliance-datasheet.md`](telemetry-compliance-datasheet.md).
 
 ## Network egress summary
 
@@ -159,7 +226,7 @@ If you want to firewall Memtrace, the outbound destinations are:
 
 - `*.memtrace.io` (license + telemetry)
 - `huggingface.co` and `cdn-lfs*.huggingface.co` (model downloads,
-  first-run only — cached locally after)
+  first run only — cached locally after)
 - `registry.npmjs.org` (only when running `memtrace install` to
   upgrade)
 
@@ -170,11 +237,15 @@ gets slowly less functional.
 ## TL;DR
 
 - We never see your code, queries, or repo data.
-- License validation needs a daily-ish ping with no content.
-- Crash reports are anonymised — we redact paths, names, args.
-- Aggregate usage telemetry is OFF by default. You have to
-  explicitly turn it on. You can revoke at any time.
-- One env var (`MEMTRACE_TELEMETRY_DISABLED=1`) is the kill switch.
+- License validation needs an hourly-ish ping with no content.
+- Product telemetry is **on by default** — sanitised crash, error,
+  usage events, and aggregate PR review/watch counters. One env var
+  disables it.
+- `MEMTRACE_TELEMETRY=off` is the kill switch (also accepts `0`,
+  `false`, `disabled`, `no`).
+- You can `cat ~/.memtrace/telemetry/queue.jsonl` any time to see
+  exactly what's queued before it ships.
 
-For the formal versions, see [`PRIVACY.md`](../PRIVACY.md) and
-[`TELEMETRY.md`](../TELEMETRY.md).
+For the formal versions, see [`PRIVACY.md`](../PRIVACY.md),
+[`TELEMETRY.md`](../TELEMETRY.md), and the compliance datasheet at
+[`telemetry-compliance-datasheet.md`](telemetry-compliance-datasheet.md).

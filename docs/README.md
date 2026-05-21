@@ -31,8 +31,10 @@ look up later":
 | Doc | What's in it |
 |---|---|
 | [`getting-started.md`](getting-started.md) | Install, first-run walkthrough, `memtrace start` + `memtrace index`, what to expect on a fresh machine. |
+| [`cli-reference.md`](cli-reference.md) | Current `memtrace --help` command surface: start/status/index/MCP, code review, PR watches, embedding provider commands, flags, and key env vars. |
 | [`architecture.md`](architecture.md) | High-level picture of the components — daemon, MCP server, MemDB, indexer, embedding pipeline. No deep internals; just enough to reason about behaviour. |
 | [`data-directories.md`](data-directories.md) | Every directory Memtrace creates: `.memdb/`, `.memtrace/`, `~/.memtrace/embed-cache/`, model caches. What's in each, where it lives, when to delete it. |
+| [`embedding-providers.md`](embedding-providers.md) | Local presets, remote/BYO embedding providers (OpenAI, Voyage, Ollama, Infinity, TEI, …), Matryoshka dim truncation, the `memtrace embed` CLI. |
 | [`environment-variables.md`](environment-variables.md) | The full env var reference — transport, ports, model selection, RAM tuning, embedding caps. |
 | [`mcp-and-transports.md`](mcp-and-transports.md) | How agents talk to Memtrace. stdio (per-session subprocess) vs streamable-HTTP (one server, many concurrent agents). When to pick which. |
 | [`tools.md`](tools.md) | The full MCP tool catalogue — `find_symbol`, `find_code`, `get_symbol_context`, `get_impact`, `get_evolution`, etc. Inputs, outputs, when to use which. |
@@ -40,6 +42,7 @@ look up later":
 | [`performance-tuning.md`](performance-tuning.md) | Fitting Memtrace to your machine. Auto-tuning by RAM, model selection, batch sizes, RSS guardrails. |
 | [`troubleshooting.md`](troubleshooting.md) | Concrete fixes for the most common failure modes — slow startup, swap blowouts, MCP not appearing in your client, indexing hangs. |
 | [`privacy-and-telemetry.md`](privacy-and-telemetry.md) | What stays on your machine, what's optionally sent to us, how to turn telemetry off. |
+| [`v0.4.60-release-notes.md`](v0.4.60-release-notes.md) | The memory-footprint round: −15% RSS, 35× tighter variance, −41% binary, no behaviour change. Two new env knobs (`MEMTRACE_UNIFIED_CACHE_MB`, `MEMTRACE_ORT_LOW_RSS`); both have sensible defaults. |
 
 ## The 90-second tour
 

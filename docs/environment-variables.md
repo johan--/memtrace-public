@@ -39,17 +39,26 @@ the defaults auto-tune to your machine.
 
 ## Embedding pipeline
 
+> **New CLI surface** — most of the knobs below now have a friendlier
+> wrapper: `memtrace embed set <preset>` or
+> `memtrace embed set --remote …` writes a persistent config so you
+> don't have to re-export env vars on every shell. See
+> [`embedding-providers.md`](embedding-providers.md) for the full
+> command tour. The env vars listed here still work as a transient
+> escape hatch — useful in CI — but the CLI is the recommended path
+> for everyone else.
+
 | Var | Default | Purpose |
 |---|---|---|
 | `MEMTRACE_EMBED_MODEL` | `jina-code` (jinaai/jina-embeddings-v2-base-code, 768d) | Model to use. Other accepted values: `bge-small` (384d, ~140 MB — legacy rollback), `bge-base` (768d, ~440 MB), `nomic` (768d). |
 | `MEMTRACE_EMBED_QUANT` | auto-picked: `int8` on Apple Silicon (any tier), `fp32` on Heavy tier elsewhere, `int8` on Standard / Light | Embedding quantisation. Force with `int8` or `fp32`. **(v0.3.83)** Apple Silicon now defaults to `int8` for every tier — restores pre-f0fcf221 performance characteristics on M-Max / M-Ultra hosts where fp32 fell back to the slow CoreML CPU path (the Apple Neural Engine only accelerates `int8`). Set `MEMTRACE_EMBED_QUANT=fp32` to opt back into fp32 on Apple Silicon (e.g. for a recall-vs-speed benchmark). Workstation Linux / Windows on Heavy tier are unchanged — CUDA / DirectML still accelerates fp32 there. |
-| `MEMTRACE_VECTOR_DIMS` | `768` (matches default model) | Vector dimensionality of the HNSW index. **Must match the model's output dim.** Switching models with a mismatch raises a clear "dim mismatch" error pointing at the right value. |
+| `MEMTRACE_VECTOR_DIMS` | model-derived (e.g. `768` for `jina-code`, `384` for `bge-small`, `1024` for `voyage-code-3`) | Vector dimensionality of the HNSW index. When unset, derived from the active model so `MEMTRACE_EMBED_MODEL=bge-small memtrace index .` now works on a fresh install without also setting this var. Explicit values still override. Must match the active model's output dim — switching models with a mismatch raises a clear error pointing at `memtrace embed set`. |
 | `MEMTRACE_EMBED_INTRA_OP_THREADS` | tier-aware (1 / 2 / 4 for Light / Standard / Heavy) | Cap on ORT intra-op threads. Single biggest lever for memory on tight machines. |
 | `MEMTRACE_EMBED_BATCH_SIZE` | tier-aware (8 / 16 / 64 for Light / Standard / Heavy) | Per-batch size handed to the embedder. Memory scales linearly with this. Smaller batches finish faster per call, which matters on slow CPU paths (see `MEMTRACE_EMBED_BATCH_TIMEOUT_SECS`). |
 | `MEMTRACE_EMBED_BATCH_TIMEOUT_SECS` | `60` | Per-batch wall-clock ceiling. When exceeded, the embedding worker is abandoned and respawned on the next call (the bootstrap is self-healing — it just retries). On slow CPU paths (pre-AVX2 hosts: Intel Ivy Bridge / Xeon E5 v2 and older, AMD pre-Excavator) bump to `240` or higher; you'll see the warning `"Embedding batch timed out after 60s …"` if you need it. |
 | `MEMTRACE_EMBED_TIMEOUT_DEBUG` | (unset) | Set to `1` to log the offending input previews when a batch times out. Useful for diagnosing whether a single very long symbol body is dragging an otherwise fast batch over the limit. Off by default — these logs include source snippets. |
 | `MEMTRACE_EMBED_RSS_LIMIT_GB` | tier-aware (3 / 6 / 10 / 20 GB) | Soft RSS ceiling on the embed process that triggers back-pressure when exceeded. Set to `0` to disable the check. |
-| `MEMTRACE_EMBED_PRESSURE` | `warn` | **(v0.3.82)** System-pressure gate threshold. Values: `off` (no gating), `normal` (block on any pressure), `warn` (block on Warn/Critical), `critical` (block only on Critical). The probe reads system-wide free + compressor + swap-rate (Mach `host_statistics64` on macOS, `/proc/meminfo` on Linux, `GlobalMemoryStatusEx` on Windows). Sustained `Critical` pressure for 60 s consecutive trips a circuit breaker; daemon exits 75 with a clear banner instead of hanging silently. |
+| `MEMTRACE_EMBED_PRESSURE` | `warn` | **(v0.3.82)** System-pressure gate threshold for **local** embedding. Values: `off` (no gating), `normal` (block on any pressure), `warn` (block on Warn/Critical), `critical` (block only on Critical). The probe reads system-wide free + compressor + swap-rate (Mach `host_statistics64` on macOS, `/proc/meminfo` on Linux, `GlobalMemoryStatusEx` on Windows). Sustained `Critical` pressure for 60 s consecutive trips a circuit breaker; daemon exits 75 with a clear banner instead of hanging silently. **Remote providers are unaffected** — when you've configured a remote embedder (OpenAI / Voyage / Ollama etc. via `memtrace embed set --remote …`), the gate is bypassed because the inference happens off-host and local pressure is irrelevant. |
 | `MEMTRACE_EMBED_MIN_LINES` | `4` | Don't embed symbols with fewer body lines than this. Prevents wasting cache on trivial helpers. |
 | `MEMTRACE_LONGFN_CHUNK_THRESHOLD` | `80` | **(v0.3.82)** Functions with more body lines than this are embedded as overlapping sub-spans rather than one blob. Improves recall on natural-language queries that match content deep inside long functions. Set to a very large number (e.g. `100000`) to disable. |
 | `MEMTRACE_LONGFN_CHUNK_SIZE` | `60` | Sub-span size when chunking. |
@@ -82,6 +91,8 @@ edge cases where you want to bias the ranking yourself.
 | Var | Default | Purpose |
 |---|---|---|
 | `MEMTRACE_MAX_THREADS` | `n-2` for `memtrace index`, `n/2` for `memtrace start` | Rayon parse-thread pool size. Useful to leave cores free for your editor. |
+| `MEMTRACE_UNIFIED_CACHE_MB` | `256` | **(v0.4.60)** Single in-RAM hot-cache budget shared across the embed-vector and backend page-cache layers (moka W-TinyLFU eviction). Defaulting to 256 MB caps the daemon's discretionary RAM at a known number; raise to `512` / `1024` on hosts with RAM headroom for a higher hit rate. Set `0` to disable the cache entirely. Replaces a set of per-subsystem caches that compounded silently. |
+| `MEMTRACE_ORT_LOW_RSS` | `0` | **(v0.4.60)** Opt-in ORT memory-arena toggle. When `1`, every `ort::Session::builder()` site (rerank, splade, embedder) calls `.with_memory_pattern(false)`, which releases CPU activation arena between batches. Cites [microsoft/onnxruntime#11627](https://github.com/microsoft/onnxruntime/issues/11627). Empirical impact on our shipping models: **−2.7% peak RSS for −19% throughput** on the concurrent rerank+embed workload — default OFF because that trade is bad on our model sizes (34 MB int8 reranker + 140 MB int8 embedder). Turn ON only if you're running much smaller custom models where the arena dwarfs the model. |
 
 ## Workspace daemon (v0.3.82)
 
@@ -175,8 +186,9 @@ default.
 
 | Var | Default | Purpose |
 |---|---|---|
-| `MEMTRACE_TELEMETRY_DISABLED` | (unset) | Set to `1` to block telemetry regardless of consent state. Hard override. |
-| `MEMTRACE_NO_REMOTE_RECEIPT` | (unset) | Set to `1` to omit the weekly-receipt symbol-name surface from heartbeats. Even if the user opted in to weekly emails on memtrace.io, this env var ensures no symbol names cross the network from this machine. The cloud then has nothing concrete to anchor an email and skips the send for that week. See [`privacy-and-telemetry.md`](privacy-and-telemetry.md#4-weekly-memtrace-receipt-opt-in-off-by-default). |
+| `MEMTRACE_TELEMETRY` | (unset, treated as on) | The user-facing kill switch. Set to `off` / `0` / `false` / `disabled` / `no` to disable product telemetry. See [`TELEMETRY.md`](../TELEMETRY.md) and [`privacy-and-telemetry.md`](privacy-and-telemetry.md#2-product-telemetry-on-by-default--opt-out). |
+| `MEMTRACE_TELEMETRY_DISABLED` | (unset) | Hard override. Set to `1` to block telemetry unconditionally — takes precedence over `MEMTRACE_TELEMETRY` and any other state. Recommended for CI / locked-down environments. |
+| `MEMTRACE_NO_REMOTE_RECEIPT` | (unset) | Set to `1` to omit the weekly-receipt symbol-name surface from heartbeats. Even if the user opted in to weekly emails on memtrace.io, this env var ensures no symbol names cross the network from this machine. The cloud then has nothing concrete to anchor an email and skips the send for that week. See [`privacy-and-telemetry.md`](privacy-and-telemetry.md) §3 and [`telemetry-compliance-datasheet.md`](telemetry-compliance-datasheet.md) §6.4. |
 | `MEMTRACE_LICENSE_KEY` | (unset) | Optional bearer-style license key for non-interactive (CI / server) authentication. Most users authenticate via device flow on first run instead. |
 
 ## Redis / pub-sub (multi-process deployments)

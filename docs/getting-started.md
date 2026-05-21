@@ -36,7 +36,11 @@ After install:
 
 ```bash
 memtrace --version    # confirms the install
+memtrace --help       # shows the installed CLI command surface
 ```
+
+The public command reference lives in
+[`cli-reference.md`](cli-reference.md).
 
 ### Recommended next step (Apple Silicon especially): warm the embedding model
 
@@ -157,7 +161,7 @@ After your first index:
 | `~/.memtrace/embed-cache/` | Embedding cache, keyed by symbol AST hash | Yes |
 | `~/.memtrace/fastembed_cache/` | Downloaded embedding model files | Yes |
 | `~/.memtrace/rerank-models/` | Downloaded cross-encoder reranker files | Yes |
-| `~/.memtrace/telemetry/` | Opt-in telemetry buffer (only if you opted in) | Yes |
+| `~/.memtrace/telemetry/` | Product-telemetry buffer (default on; set `MEMTRACE_TELEMETRY=off` to disable) | Yes |
 
 [`data-directories.md`](data-directories.md) explains each in detail.
 

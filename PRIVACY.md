@@ -39,7 +39,9 @@ Memtrace makes exactly three types of network calls:
 | **Purpose** | Usage metering and entitlement checks |
 | **Frequency** | Every 15 minutes while running |
 
-The heartbeat payload contains **no symbol names, no file paths, no code, and no embeddings** — only integer totals like `{ "totalNodes": 4022, "totalEdges": 18441 }`.
+By default the heartbeat payload contains **no symbol names, no file paths, no code, and no embeddings** — only integer totals like `{ "totalNodes": 4022, "totalEdges": 18441 }`.
+
+The one exception is the **Weekly Memtrace Receipt** feature (off by default, opt-in via the memtrace.io account dashboard). When that toggle is on, the heartbeat additionally carries a small symbol-name surface that powers the weekly summary email. Set `MEMTRACE_NO_REMOTE_RECEIPT=1` on a specific machine to keep the receipt feature off regardless of the account-level toggle. Full breakdown: [`docs/telemetry-compliance-datasheet.md`](docs/telemetry-compliance-datasheet.md) §6.4.
 
 ### 3. Embedding Model Download (One-Time)
 
@@ -55,13 +57,14 @@ The heartbeat payload contains **no symbol names, no file paths, no code, and no
 | | |
 |:--|:--|
 | **Endpoint** | `POST https://memtrace.io/api/telemetry/ingest` |
-| **Data sent** | App-start events, indexing/embedding durations, panic reports, and `WARN`/`ERROR` log lines from Memtrace's own crates — **all sanitised** to strip home-dir paths, token-shaped strings, and email addresses |
+| **Data sent** | App-start events, indexing/embedding durations, aggregate PR review/watch counters, panic reports, and `WARN`/`ERROR` log lines from Memtrace's own crates — **all sanitised** to strip home-dir paths, token-shaped strings, and email addresses |
 | **Purpose** | Catch crashes and regressions across the user base (the M3-Air "stuck on Loading embedding model" hang, Windows MSVC build failures, etc. are exactly the kind of thing this is for) |
 | **Frequency** | Batched flush every 60 seconds while running |
 | **Opt-out** | `MEMTRACE_TELEMETRY=off` (also `0`/`false`/`disabled`/`no`) |
 
 The telemetry payload **never** contains source code, file contents,
-symbol names, embeddings, repository paths, branch names, or commit
+symbol names, embeddings, repository paths, GitHub PR URLs, PR discussion
+text, reviewer identities, branch names, or commit
 data. The schema on the receiving end has no column to hold any of
 those — we'd have to ship a new release to even start collecting them,
 and we'd announce it here first. Full breakdown: [TELEMETRY.md](TELEMETRY.md).

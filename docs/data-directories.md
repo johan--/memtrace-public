@@ -20,6 +20,8 @@ when (if ever) to delete it.
    ├── fastembed_cache/     ← downloaded embedding models
    ├── rerank-models/       ← downloaded reranker model
    ├── auth/                ← session tokens (one file)
+   ├── config.toml          ← persistent embedder choice — see embedding-providers.md
+   ├── last_health.json     ← last `memtrace embed test` probe result
    ├── logs/                ← daemon.log + rotated history (v0.3.89)
    ├── session-ledger.jsonl ← user-global MCP tool-call ledger (v0.3.89)
    ├── watches.json         ← persistent watch_directory registrations (v0.3.89)
@@ -236,12 +238,17 @@ you through device-flow login again.
 
 ## `~/.memtrace/telemetry/`
 
-Only created if you opted into telemetry during `memtrace start`.
-Stores a small batch of pending events to be sent on the next
-heartbeat. See [`privacy-and-telemetry.md`](privacy-and-telemetry.md)
-for what's actually in there.
+Created on first run because product telemetry is on by default.
+Stores a small batch of pending events (sanitised crashes, errors,
+and lightweight usage signals) until the flusher ships them every
+60 seconds. See [`privacy-and-telemetry.md`](privacy-and-telemetry.md)
+for the full field-level breakdown of what's in there.
 
-If you didn't opt in, this directory doesn't exist.
+Set `MEMTRACE_TELEMETRY=off` to disable telemetry — the panic hook
+still leaves a local breadcrumb in this directory if the binary
+crashes (useful for your own debugging), but the flusher never
+ships it. If you've never run `memtrace start`, the directory
+doesn't exist yet.
 
 ## `~/.memtrace/logs/daemon.log` (v0.3.89)
 
