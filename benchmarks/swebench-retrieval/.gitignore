@@ -1,4 +1,5 @@
 .venv/
+work/
 __pycache__/
 *.pyc
 results/*/run_meta.json

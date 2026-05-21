@@ -1,2 +1,5 @@
 .DS_Store
 **/.DS_Store
+/benchmarks/swebench-retrieval/.venv/
+/benchmarks/swebench-retrieval/work/
+/benchmarks/swebench-retrieval/**/__pycache__/
