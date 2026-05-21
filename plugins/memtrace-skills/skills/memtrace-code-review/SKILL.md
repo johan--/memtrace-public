@@ -15,6 +15,12 @@ Use Memtrace's local-first PR review workflow. The agent should call the `review
 4. Default to `minSeverity: "high"` and `maxComments: 5` when posting. For previews, `maxComments: 10` is acceptable.
 5. Pass `repoRoot` when the PR checkout is not the current working directory. Pass `repoId` when the indexed repository id is known.
 
+## Example User Prompts
+
+- "Review this PR with Memtrace: https://github.com/OWNER/REPO/pull/123"
+- "Use Memtrace to review this pull request and post the findings: https://github.com/OWNER/REPO/pull/123"
+- "Create the PR, then run Memtrace code review and publish the review comments."
+
 ## Guardrails
 
 - Do not start with generic grep, rg, or manual diff review when `review_github_pr` is available.
