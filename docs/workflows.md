@@ -10,6 +10,30 @@ back.
 If you're curious which tools the agent picks under the hood, look at
 [`tools.md`](tools.md). You'll never need to memorise it.
 
+## Pull request code review
+
+When you want a branch, PR, and review loop, Memtrace can do the whole
+flow from the CLI or through the `memtrace-code-review` agent skill.
+
+**Ask your agent:**
+
+> "Create a feature branch for this change, push a PR, run Memtrace
+> code review, and post the findings."
+
+Or run it yourself:
+
+```bash
+memtrace code-review \
+  --pr https://github.com/OWNER/REPO/pull/123 \
+  --post \
+  --watch \
+  --repo-root "$PWD"
+```
+
+Then use GitHub comments like `@memtrace explain`, `@memtrace fix this`,
+or `@memtrace rerun` on the PR. The full workflow is in
+[`code-reviewer.md`](code-reviewer.md).
+
 ## Onboarding to an unfamiliar codebase
 
 You just cloned someone else's repo and you have no idea what it does.

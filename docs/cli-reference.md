@@ -53,6 +53,8 @@ memtrace --help
 `memtrace code-review` is local-first. The hosted Memtrace service only
 mints a short-lived GitHub App installation token. Diff analysis, graph
 lookup, ranking, and comment selection run on the developer machine.
+For the end-to-end PR workflow, GitHub comment commands, and local agent
+fix setup, see [`code-reviewer.md`](code-reviewer.md).
 
 ```bash
 memtrace code-review --pr https://github.com/OWNER/REPO/pull/123

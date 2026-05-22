@@ -1,0 +1,221 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 880" overflow="hidden" role="img" aria-labelledby="title desc">
+  <title id="title">Memtrace code reviewer workflow</title>
+  <desc id="desc">A workflow diagram showing a feature branch pull request, local Memtrace review, GitHub review comments, PR command comments, local execution, optional agent fixes, and replies back to GitHub.</desc>
+  <defs>
+    <linearGradient id="pageBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#07101f"/>
+      <stop offset="50%" stop-color="#101a2e"/>
+      <stop offset="100%" stop-color="#07161a"/>
+    </linearGradient>
+    <linearGradient id="panelBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0e182a"/>
+      <stop offset="100%" stop-color="#101827"/>
+    </linearGradient>
+    <linearGradient id="localBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0b2b30"/>
+      <stop offset="100%" stop-color="#0d3228"/>
+    </linearGradient>
+    <linearGradient id="agentBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1a1536"/>
+      <stop offset="100%" stop-color="#301844"/>
+    </linearGradient>
+    <linearGradient id="strokeTeal" x1="0" x2="1">
+      <stop offset="0%" stop-color="#2ee6c5"/>
+      <stop offset="100%" stop-color="#8af5e6"/>
+    </linearGradient>
+    <linearGradient id="strokePurple" x1="0" x2="1">
+      <stop offset="0%" stop-color="#9f7aea"/>
+      <stop offset="100%" stop-color="#f0abfc"/>
+    </linearGradient>
+    <filter id="tealGlow" x="-28%" y="-28%" width="156%" height="156%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.18 0 0 0 0 0.91 0 0 0 0 0.78 0 0 0 .38 0"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="purpleGlow" x="-28%" y="-28%" width="156%" height="156%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 .62 0 0 0 0 .43 0 0 0 0 1 0 0 0 .36 0"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <marker id="arrowTeal" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2,2 L10,6 L2,10 Z" fill="#82f7e9"/>
+    </marker>
+    <marker id="arrowGray" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2,2 L10,6 L2,10 Z" fill="#94a3b8"/>
+    </marker>
+    <marker id="arrowPurple" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2,2 L10,6 L2,10 Z" fill="#c4a3ff"/>
+    </marker>
+    <style>
+      .title { font: 800 40px ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif; fill: #f7fbff; letter-spacing: 0; }
+      .subtitle { font: 500 19px ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif; fill: #b5c2d4; letter-spacing: 0; }
+      .lane { font: 800 15px ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif; fill: #8af5e6; letter-spacing: 1.7px; }
+      .laneBlue { fill: #c7d2fe; }
+      .h { font: 800 25px ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif; fill: #eef6ff; letter-spacing: 0; }
+      .subh { font: 800 17px ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif; fill: #e2e8f0; letter-spacing: 0; }
+      .body { font: 560 17px ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif; fill: #b8c5d8; letter-spacing: 0; }
+      .small { font: 700 13px ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif; fill: #95a4b8; letter-spacing: 0; }
+      .mono { font: 750 16px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill: #e5f3ff; letter-spacing: 0; }
+      .monoSmall { font: 750 13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill: #dbeafe; letter-spacing: 0; }
+      .panel { fill: url(#panelBg); stroke: #27384f; stroke-width: 1.5; }
+      .baseCard { fill: #171f30; stroke: #66758c; stroke-width: 1.8; }
+      .localCard { fill: url(#localBg); stroke: url(#strokeTeal); stroke-width: 2.2; }
+      .agentCard { fill: url(#agentBg); stroke: url(#strokePurple); stroke-width: 2.2; }
+      .miniCard { fill: rgba(13, 22, 37, .7); stroke: #32445d; stroke-width: 1.2; }
+      .chip { fill: #111c2f; stroke: #34465f; stroke-width: 1.1; }
+      .chipText { font: 750 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill: #d7e4f5; letter-spacing: 0; }
+      .okChip { fill: #0d2f28; stroke: #34d399; }
+      .warnChip { fill: #30283b; stroke: #f0c66a; }
+      .path { fill: none; stroke: #82f7e9; stroke-width: 3.5; stroke-linecap: round; stroke-dasharray: 13 13; marker-end: url(#arrowTeal); animation: dash 3.2s linear infinite; }
+      .pathGray { fill: none; stroke: #94a3b8; stroke-width: 2.7; stroke-linecap: round; stroke-dasharray: 8 12; marker-end: url(#arrowGray); animation: dash 4.6s linear infinite; }
+      .pathPurple { fill: none; stroke: #c4a3ff; stroke-width: 3.2; stroke-linecap: round; stroke-dasharray: 11 12; marker-end: url(#arrowPurple); animation: dash 3.8s linear infinite; }
+      .scan { animation: scanOpacity 2.8s ease-in-out infinite; }
+      @keyframes dash { to { stroke-dashoffset: -104; } }
+      @keyframes scanOpacity {
+        0%, 100% { opacity: .22; }
+        50% { opacity: 1; }
+      }
+    </style>
+  </defs>
+
+  <rect width="1440" height="880" rx="36" fill="url(#pageBg)"/>
+  <rect x="30" y="30" width="1380" height="820" rx="30" fill="none" stroke="#27384f" stroke-width="1.5"/>
+
+  <text x="70" y="88" class="title">Memtrace Code Reviewer</text>
+  <text x="70" y="124" class="subtitle">Create a PR, run local review, then drive follow-up directly from GitHub comments.</text>
+
+  <g transform="translate(1100 56)">
+    <rect x="0" y="0" width="230" height="48" rx="24" fill="#0c2a26" stroke="#2ee6c5"/>
+    <circle cx="27" cy="24" r="7" fill="#2ee6c5"/>
+    <text x="48" y="30" class="monoSmall">source stays local</text>
+  </g>
+
+  <g transform="translate(70 160)">
+    <rect class="panel" width="1300" height="260" rx="24"/>
+    <text x="30" y="42" class="lane">LOCAL MACHINE</text>
+    <text x="1030" y="42" class="small">CLI or agent skill starts here</text>
+
+    <g transform="translate(36 82)">
+      <rect class="baseCard" width="250" height="132" rx="18"/>
+      <circle cx="36" cy="38" r="19" fill="#20304a" stroke="#50627c"/>
+      <path d="M26 38 h20 M36 28 v20" stroke="#cbd5e1" stroke-width="3.2" stroke-linecap="round"/>
+      <text x="70" y="42" class="h">1. Branch</text>
+      <text x="70" y="72" class="mono">git checkout -b</text>
+      <text x="70" y="100" class="body">focused change</text>
+    </g>
+
+    <g transform="translate(354 82)">
+      <rect class="baseCard" width="250" height="132" rx="18"/>
+      <circle cx="36" cy="38" r="19" fill="#20304a" stroke="#50627c"/>
+      <path d="M26 40 h20 l-7 -7 M46 40 l-7 7" fill="none" stroke="#cbd5e1" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="70" y="42" class="h">2. Push PR</text>
+      <text x="70" y="72" class="mono">git push</text>
+      <text x="70" y="100" class="body">open pull request</text>
+    </g>
+
+    <g transform="translate(672 56)">
+      <rect class="localCard" width="300" height="184" rx="22"/>
+      <text x="28" y="48" class="h">3. Run review</text>
+      <text x="28" y="80" class="mono">memtrace code-review</text>
+      <text x="28" y="106" class="mono">--post --watch</text>
+      <text x="28" y="135" class="body">rules plus graph context</text>
+      <rect x="28" y="150" width="240" height="12" rx="6" fill="#0a1f24" stroke="#28505a"/>
+      <rect class="scan" x="32" y="153" width="54" height="6" rx="3" fill="#82f7e9"/>
+    </g>
+
+    <g transform="translate(1036 82)">
+      <rect class="localCard" width="228" height="132" rx="18"/>
+      <text x="24" y="42" class="h">4. Review</text>
+      <text x="24" y="72" class="body">inline comments</text>
+      <text x="24" y="100" class="body">short findings</text>
+    </g>
+
+    <path class="path" d="M292 148 C314 148 330 148 350 148"/>
+    <path class="path" d="M610 148 C632 148 648 148 668 148"/>
+    <path class="path" d="M978 148 C1002 148 1014 148 1032 148"/>
+  </g>
+
+  <g transform="translate(70 462)">
+    <rect class="panel" width="1300" height="328" rx="24"/>
+    <text x="30" y="42" class="lane laneBlue">GITHUB PR CONVERSATION</text>
+    <text x="922" y="42" class="small">GitHub carries commands. Local Memtrace executes.</text>
+
+    <g transform="translate(36 72)">
+      <rect class="baseCard" width="420" height="214" rx="18"/>
+      <text x="24" y="40" class="h">PR commands</text>
+      <text x="24" y="70" class="body">Comment where the work is.</text>
+      <g transform="translate(24 92)">
+        <rect class="chip" width="174" height="30" rx="15"/>
+        <text x="14" y="20" class="chipText">@memtrace review</text>
+        <rect class="chip" x="188" width="174" height="30" rx="15"/>
+        <text x="202" y="20" class="chipText">@memtrace rerun</text>
+      </g>
+      <g transform="translate(24 130)">
+        <rect class="chip" width="174" height="30" rx="15"/>
+        <text x="14" y="20" class="chipText">@memtrace explain</text>
+        <rect class="chip" x="188" width="174" height="30" rx="15"/>
+        <text x="202" y="20" class="chipText">@memtrace ignore</text>
+      </g>
+      <g transform="translate(24 168)">
+        <rect class="chip" width="174" height="30" rx="15"/>
+        <text x="14" y="20" class="chipText">@memtrace fix this</text>
+        <rect class="chip" x="188" width="174" height="30" rx="15"/>
+        <text x="202" y="20" class="chipText">@memtrace merge</text>
+      </g>
+    </g>
+
+    <g transform="translate(480 82)">
+      <rect class="localCard" width="286" height="194" rx="20"/>
+      <text x="24" y="42" class="h">Local watch</text>
+      <text x="24" y="72" class="subh">Fast path</text>
+      <text x="24" y="98" class="body">hosted relay long-poll</text>
+      <text x="24" y="128" class="subh">Fallback</text>
+      <text x="24" y="154" class="body">GitHub polling sync</text>
+      <text x="24" y="178" class="monoSmall">dedupe + auth checks</text>
+    </g>
+
+    <g transform="translate(810 62)">
+      <rect class="agentCard" width="358" height="234" rx="22"/>
+      <text x="26" y="44" class="h">Local execution</text>
+      <g transform="translate(24 66)">
+        <rect class="miniCard" width="146" height="112" rx="16"/>
+        <text x="18" y="30" class="subh">Direct</text>
+        <text x="18" y="58" class="body">review, rerun</text>
+        <text x="18" y="82" class="body">explain, ignore</text>
+      </g>
+      <g transform="translate(188 66)">
+        <rect class="miniCard" width="146" height="112" rx="16"/>
+        <text x="18" y="30" class="subh">Agent fix</text>
+        <text x="18" y="58" class="body">isolated tree</text>
+        <text x="18" y="82" class="body">JSON stdin</text>
+      </g>
+      <text x="26" y="206" class="monoSmall">MEMTRACE_PR_AGENT_COMMAND</text>
+    </g>
+
+    <g transform="translate(1190 82)">
+      <rect class="baseCard" width="104" height="194" rx="18"/>
+      <text x="18" y="38" class="h">Reply</text>
+      <rect class="chip" x="14" y="58" width="76" height="28" rx="14"/>
+      <text x="30" y="77" class="chipText">seen</text>
+      <rect class="okChip" x="14" y="96" width="76" height="28" rx="14"/>
+      <text x="30" y="115" class="chipText">done</text>
+      <rect class="warnChip" x="14" y="134" width="76" height="28" rx="14"/>
+      <text x="24" y="153" class="chipText">blocked</text>
+    </g>
+
+    <path class="pathGray" d="M460 178 C466 178 472 178 476 178"/>
+    <path class="pathPurple" d="M772 178 C788 178 798 178 806 178"/>
+    <path class="pathGray" d="M1172 178 C1178 178 1184 178 1186 178"/>
+    <path class="pathPurple" d="M1034 62 C1034 22 888 -18 820 -84"/>
+  </g>
+
+  <g transform="translate(90 824)">
+    <text class="small" x="0" y="0">Hosted relay stores command metadata only. Source analysis, fixes, and permission checks run on the user's machine.</text>
+  </g>
+</svg>

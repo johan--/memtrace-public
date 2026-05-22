@@ -31,6 +31,7 @@ look up later":
 | Doc | What's in it |
 |---|---|
 | [`getting-started.md`](getting-started.md) | Install, first-run walkthrough, `memtrace start` + `memtrace index`, what to expect on a fresh machine. |
+| [`code-reviewer.md`](code-reviewer.md) | How to use Memtrace as a GitHub PR reviewer from the CLI or an agent: feature branch, PR, posted review, watched commands, and optional local fixes. |
 | [`cli-reference.md`](cli-reference.md) | Current `memtrace --help` command surface: start/status/index/MCP, code review, PR watches, embedding provider commands, flags, and key env vars. |
 | [`architecture.md`](architecture.md) | High-level picture of the components — daemon, MCP server, MemDB, indexer, embedding pipeline. No deep internals; just enough to reason about behaviour. |
 | [`data-directories.md`](data-directories.md) | Every directory Memtrace creates: `.memdb/`, `.memtrace/`, `~/.memtrace/embed-cache/`, model caches. What's in each, where it lives, when to delete it. |
