@@ -66,12 +66,13 @@ https://github.com/user-attachments/assets/e7d6a1e9-c912-4e65-a421-bd0256dffa5a
 | Graph callers recall (Django) | **81.6%** | GitNexus: 5.3% | **15.4×** |
 | Incremental re-index p95 | **42.5 ms** | CodeGrapher: 613.7 ms | 14.4× |
 | Hybrid acc@1 (Django, 3K cases) | **73.9%** | GitNexus: 38.6% | 1.91× |
+| PR code-review F1 (50 PRs) | **0.7268** | Cubic v2: 0.6077 | **+19.60%** |
 | RSS / process | **26 MB** | ChromaDB: 1,060 MB | **41× tighter** |
 | Languages | **16+** (Tree-sitter) | varies | — |
 
 Reproducible benchmark suite: [`benchmarks/`](benchmarks/README.md). Same machine, same corpora, same adapter contract. Ground truth from Python's `ast` and `pyright` LSP — never from any tool's own index. **No system gets a home-field advantage in the dataset.**
 
-Detailed breakdowns: [BENCHMARKS-v0.3.22.md](BENCHMARKS-v0.3.22.md) · [BENCHMARKS-v0.3.29.md](BENCHMARKS-v0.3.29.md)
+Detailed breakdowns: [BENCHMARKS-v0.3.22.md](BENCHMARKS-v0.3.22.md) · [BENCHMARKS-v0.3.29.md](BENCHMARKS-v0.3.29.md) · [Code reviewer benchmark](docs/code-reviewer.md#offline-benchmark-snapshot)
 
 ---
 

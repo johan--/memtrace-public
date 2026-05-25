@@ -271,167 +271,58 @@ The reviewer combines several local signals:
 
 It is not a generic style bot. It tries to post fewer, higher-signal findings.
 
-## Pitfalls and Limitations
+## Offline Benchmark Snapshot
 
-Memtrace PR review is local-first. That is the point, but it also means GitHub
-comments are not enough by themselves. A watched command succeeds only when the
-local Memtrace instance that armed the watch still has the right repository
-context.
+On the 50-PR offline code-review corpus, Memtrace is ranked first by 3-judge
+mean F1. The judges were GPT-5.2, Claude Sonnet 4.5, and Claude Opus 4.5.
 
-### The local checkout must match the PR
+| Rank | Tool | 3-judge mean F1 |
+|---:|---|---:|
+| 1 | Memtrace | **0.7268** |
+| 2 | Cubic v2 | 0.6077 |
+| 3 | Qodo Extended v2 | 0.5546 |
+| 4 | Augment | 0.5214 |
+| 5 | Qodo Extended Summary | 0.4960 |
+| 6 | Mergemonkey | 0.4691 |
+| 7 | Qodo v22 | 0.4686 |
+| 8 | Qodo v2 | 0.4650 |
+| 9 | Bugbot | 0.4438 |
 
-Review runs against the PR diff from GitHub, but file contents come from your
-local checkout. If your local `HEAD` is on `main`, on another feature branch, or
-behind the PR head, Memtrace can warn that the local head differs from the PR
-head and the review can miss context or produce stale results.
+Against Cubic v2:
 
-Before running review or relying on `@memtrace rerun`, make sure the local repo
-is at the PR head:
+- Memtrace: `0.726757`
+- Cubic v2: `0.607655`
+- Absolute lead: `+0.119102`
+- Relative lead: **`+19.60%`**
 
-```bash
-git fetch origin pull/123/head:pr-123
-git checkout pr-123
+Machine-readable snapshot:
+[`benchmarks/code-reviewer-offline-results.json`](../benchmarks/code-reviewer-offline-results.json).
 
-memtrace code-review \
-  --pr https://github.com/OWNER/REPO/pull/123 \
-  --post \
-  --watch \
-  --repo-root "$PWD"
-```
+## What Has To Be Running
 
-For same-repo branches, checking out the branch directly is fine:
+The normal workflow is agent-first:
 
-```bash
-git fetch origin
-git checkout feature-branch
-git pull --ff-only
-```
+1. Start Memtrace in the repo.
+2. Ask your agent to make the branch, open the PR, and run Memtrace review.
+3. Use `@memtrace ...` commands on GitHub.
 
-### The repo must be indexed locally
+The agent can be Claude Code, Codex, Gemini CLI, Cursor, Hermes, Windsurf, or
+another agent with a headless mode. Memtrace does the review locally; the agent
+is only needed when you ask Memtrace to create or change code.
 
-Graph-backed review needs an indexed Memtrace repository. If you point Memtrace
-at a random GitHub PR for a repo that is not indexed on your machine, it cannot
-use local graph context for that project. AST and rule checks may still run, but
-cross-module findings and graph-backed confidence will be missing or much
-weaker.
+Things that can block the workflow:
 
-Run this from the repository root before expecting graph review:
+- The repo has not been indexed on this machine.
+- The local checkout is not the PR branch.
+- The PR was not started with `--post --watch`.
+- `@memtrace fix this` has no configured headless agent command.
+- GitHub rejects a merge because checks, branch protection, or permissions fail.
 
-```bash
-memtrace index .
-memtrace status
-```
+For finding-specific commands, reply to the Memtrace inline review comment:
+`@memtrace explain`, `@memtrace ignore`, or `@memtrace fix this`.
 
-Use the correct `--repo-id` when the indexed repo id is not the folder name:
-
-```bash
-memtrace code-review \
-  --pr https://github.com/OWNER/REPO/pull/123 \
-  --post \
-  --watch \
-  --repo-root "$PWD" \
-  --repo-id MyIndexedRepo
-```
-
-This matters in monorepos. If only one package or service is indexed, Memtrace
-only has graph context for that indexed scope.
-
-### A PR must be watched before commands work
-
-`@memtrace` comments are not a global GitHub command surface. Memtrace only
-reacts to PRs that were armed with `--post --watch` from a local install:
-
-```bash
-memtrace code-review --pr https://github.com/OWNER/REPO/pull/123 --post --watch
-```
-
-The local machine that armed the watch is the machine that executes the command.
-If that machine is offline, logged out, or missing the saved watch state,
-GitHub comments will not immediately run. The hosted relay can queue command
-metadata for a short time, and GitHub polling remains a fallback, but local
-execution still requires a running local Memtrace owner or a manual sync:
-
-```bash
-memtrace pr status
-memtrace pr sync
-```
-
-Old comments from before the watch was created are ignored. Commands are also
-deduped, so editing or re-syncing an already-processed command should not rerun
-it.
-
-### Some commands need an inline Memtrace finding
-
-Top-level PR comments work for broad commands:
-
-```text
-@memtrace review
-@memtrace rerun
-```
-
-Finding-specific commands need to be replies to a Memtrace inline review
-comment so Memtrace can bind the command to a hidden finding marker:
-
-```text
-@memtrace explain
-@memtrace ignore
-@memtrace fix this
-```
-
-If you write `@memtrace fix this` as a general PR comment, Memtrace may see the
-command but it does not know which finding to fix.
-
-### GitHub permissions still apply
-
-Memtrace checks the command author's GitHub permission before executing.
-
-| Command type | Who can run it |
-|---|---|
-| `review`, `rerun`, `explain` | PR author or repository collaborator |
-| `ignore`, `fix this`, `merge` | Users with `write`, `maintain`, or `admin` permission |
-
-`@memtrace merge` only asks GitHub to merge the PR. Branch protection, required
-checks, review requirements, merge queues, and GitHub App permissions can still
-reject it.
-
-### `fix this` is intentionally limited
-
-Automatic fixes need a configured local headless agent:
-
-```bash
-export MEMTRACE_PR_AGENT_COMMAND="/path/to/agent-wrapper"
-```
-
-In the current version, `fix this` works only for same-repo PR branches. Fork PR
-pushes are not supported yet. The local repo must also be able to fetch the PR
-head, create a worktree under `~/.memtrace/pr-worktrees/`, commit, and push back
-to the PR branch.
-
-Supported fix quality depends on the configured agent. Memtrace supplies the PR
-URL, worktree path, triggering comment, target finding, and head SHA as JSON on
-stdin, but the agent still has to be installed, authenticated, and capable of
-running non-interactively.
-
-### It is not a full human reviewer
-
-Memtrace is designed to post fewer, higher-signal findings from deterministic
-rules, AST checks, and graph context. It is not meant to comment on every style
-preference, naming issue, product choice, or architectural concern. A clean
-review means Memtrace did not find a high-confidence issue in the changed lines;
-it does not prove the PR is correct.
-
-## Troubleshooting
-
-| Symptom | Fix |
-|---|---|
-| `--post` cannot publish comments | Install the Memtrace GitHub App on the repository. |
-| Commands do not run | Confirm the PR was started with `--post --watch`, keep local Memtrace running, and run `memtrace pr sync` once. |
-| `fix this` says agent command is missing | Set `MEMTRACE_PR_AGENT_COMMAND` before running watch mode. |
-| Cursor fix fails with auth | Run `cursor agent login` or set `CURSOR_API_KEY`. |
-| Merge is rejected | Check GitHub App permissions, branch protection, and required checks. |
-| Graph review says context is missing | Run `memtrace index .` from the repo root and rerun review. |
-| Review looks stale | Check out the PR head locally, rerun `memtrace code-review`, then use `@memtrace rerun`. |
-| `explain`, `ignore`, or `fix this` lacks context | Reply directly to the Memtrace inline review comment instead of posting a top-level PR comment. |
+For PR-wide commands, a normal PR comment is enough: `@memtrace rerun`,
+`@memtrace review`, or `@memtrace merge`.
 
 ## Privacy
 

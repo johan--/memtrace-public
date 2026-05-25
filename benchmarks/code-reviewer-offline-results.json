@@ -1,0 +1,68 @@
+{
+  "benchmark": "Memtrace code reviewer offline benchmark snapshot",
+  "updated": "2026-05-25",
+  "metric": "3-judge mean F1",
+  "dataset": {
+    "pull_requests": 50,
+    "description": "Offline code-review corpus with golden comments across Sentry, Grafana, Keycloak, Cal.com, and Discourse PRs."
+  },
+  "judges": [
+    "openai_gpt-5.2",
+    "anthropic_claude-sonnet-4-5-20250929",
+    "anthropic_claude-opus-4-5-20251101"
+  ],
+  "source_note": "Derived from the latest merged offline evaluation JSONs.",
+  "leaderboard": [
+    {
+      "rank": 1,
+      "tool": "Memtrace",
+      "mean_f1": 0.726757
+    },
+    {
+      "rank": 2,
+      "tool": "Cubic v2",
+      "mean_f1": 0.607655
+    },
+    {
+      "rank": 3,
+      "tool": "Qodo Extended v2",
+      "mean_f1": 0.554587
+    },
+    {
+      "rank": 4,
+      "tool": "Augment",
+      "mean_f1": 0.521432
+    },
+    {
+      "rank": 5,
+      "tool": "Qodo Extended Summary",
+      "mean_f1": 0.495969
+    },
+    {
+      "rank": 6,
+      "tool": "Mergemonkey",
+      "mean_f1": 0.4691
+    },
+    {
+      "rank": 7,
+      "tool": "Qodo v22",
+      "mean_f1": 0.4686
+    },
+    {
+      "rank": 8,
+      "tool": "Qodo v2",
+      "mean_f1": 0.465
+    },
+    {
+      "rank": 9,
+      "tool": "Bugbot",
+      "mean_f1": 0.4438
+    }
+  ],
+  "against_cubic": {
+    "memtrace_latest_mean_f1": 0.726757,
+    "cubic_v2_mean_f1": 0.607655,
+    "absolute_lead": 0.119102,
+    "relative_lead": 0.196
+  }
+}
