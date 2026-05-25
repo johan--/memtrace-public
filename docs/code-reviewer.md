@@ -9,16 +9,20 @@ Either way, analysis happens on your machine.
 ## The Short Version
 
 1. Make sure the repository is indexed locally.
-2. Make a feature branch and open a GitHub pull request.
-3. Run `memtrace code-review --post --watch` on the PR.
-4. Keep a local Memtrace owner running for watched commands: `memtrace start`,
+2. Pick your fix agent once with `memtrace code-review setup`.
+3. Make a feature branch and open a GitHub pull request.
+4. Run `memtrace code-review --post --watch` on the PR.
+5. Keep a local Memtrace owner running for watched commands: `memtrace start`,
    a headless daemon, or an active `memtrace mcp` session.
-5. Reply on GitHub with `@memtrace ...` commands when you want a rerun,
+6. Reply on GitHub with `@memtrace ...` commands when you want a rerun,
    explanation, ignore, local fix, or merge attempt.
 
 ```bash
 # If this repo is not indexed yet:
 memtrace index .
+
+# Choose the headless agent used by @memtrace fix this:
+memtrace code-review setup
 
 git checkout -b feat/my-change
 # make your change
@@ -170,9 +174,22 @@ For `@memtrace fix this`, Memtrace uses a temporary checkout of the PR branch,
 asks a local headless agent to make the narrow edit, then commits and pushes
 the result back to the PR. Your active working directory is left alone.
 
-For normal use, there is nothing else to configure. If Codex, Claude Code,
-Cursor Agent, or Gemini CLI is installed and authenticated, Memtrace can detect
-it automatically.
+Choose the default agent once:
+
+```bash
+memtrace code-review setup
+```
+
+Or set it directly:
+
+```bash
+memtrace code-review setup --agent codex
+memtrace code-review setup --agent claude
+memtrace code-review setup --agent cursor
+memtrace code-review setup --agent gemini
+```
+
+That choice is saved on your machine and reused for watched PRs.
 
 ```bash
 memtrace code-review \
@@ -188,27 +205,21 @@ Then reply to a Memtrace inline review comment:
 @memtrace fix this
 ```
 
-If multiple supported agents are installed, choose one explicitly:
+Use `--agent auto` if you want Memtrace to detect an installed supported
+agent. Cursor may require `cursor agent login` first.
 
 ```bash
-MEMTRACE_PR_AGENT_PROVIDER=codex \
-  memtrace code-review \
-    --pr https://github.com/OWNER/REPO/pull/123 \
-    --post \
-    --watch
+memtrace code-review setup --agent auto
 ```
-
-Supported provider values are `codex`, `claude`, `cursor`, and `gemini`.
-Cursor may require `cursor agent login` first.
 
 For other headless agents, use a custom adapter:
 
 ```bash
-export MEMTRACE_PR_AGENT_COMMAND="/path/to/your-agent-wrapper"
+memtrace code-review setup --command "/path/to/your-agent-wrapper"
 ```
 
-That wrapper receives the PR context as JSON on stdin. Most users should not
-need this.
+Environment variables still work as one-off overrides:
+`MEMTRACE_PR_AGENT_PROVIDER` and `MEMTRACE_PR_AGENT_COMMAND`.
 
 ## Typical Feature Workflow
 

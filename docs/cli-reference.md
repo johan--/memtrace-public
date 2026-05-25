@@ -23,6 +23,7 @@ memtrace --help
 | `memtrace mcp` | Run the MCP server for Claude, Cursor, Codex, and other MCP-compatible agents. It attaches to an existing workspace owner or becomes the owner if none is running. |
 | `memtrace index <path>` | Index a repository or workspace into MemDB, then exit. |
 | `memtrace daemon install/start/status/stop` | Install or control the optional background service where supported. |
+| `memtrace code-review setup` | Choose the default headless agent for `@memtrace fix this`. |
 | `memtrace code-review --pr <url>` | Review a GitHub pull request using local Memtrace context. |
 | `memtrace pr status` | Show local PR watches registered by `memtrace code-review --post --watch`. |
 | `memtrace pr sync` | Poll watched PRs once via the installed GitHub App. |
@@ -74,6 +75,7 @@ For the end-to-end PR workflow, GitHub comment commands, and local agent
 fix setup, see [`code-reviewer.md`](code-reviewer.md).
 
 ```bash
+memtrace code-review setup
 memtrace code-review --pr https://github.com/OWNER/REPO/pull/123
 memtrace code-review --pr https://github.com/OWNER/REPO/pull/123 --post
 memtrace code-review --pr https://github.com/OWNER/REPO/pull/123 --post --watch
@@ -91,6 +93,17 @@ Flags:
 | `--graph-mode <strict|off>` | Use graph-backed review checks in `strict` mode, or disable graph-backed checks with `off`. Default is `strict`. |
 | `--repo-id <ID>` | Memtrace repo id for graph review. Defaults to `MEMTRACE_DEFAULT_REPO`, then the local repo basename. |
 | `--repo-root <PATH>` | Local checkout root. Defaults to the git toplevel. |
+
+Run `memtrace code-review setup` once to choose the local headless
+agent used by `@memtrace fix this`. Non-interactive examples:
+
+```bash
+memtrace code-review setup --agent codex
+memtrace code-review setup --agent claude
+memtrace code-review setup --agent cursor
+memtrace code-review setup --agent gemini
+memtrace code-review setup --agent auto
+```
 
 The GitHub App must be installed on the repository before `--post` can
 publish comments. The local UI exposes an **Install app** action for the

@@ -23,6 +23,8 @@ flow from the CLI or through the `memtrace-code-review` agent skill.
 Or run it yourself:
 
 ```bash
+memtrace code-review setup
+
 memtrace code-review \
   --pr https://github.com/OWNER/REPO/pull/123 \
   --post \
