@@ -44,7 +44,7 @@ Memtrace has four moving parts in the review flow:
 | Review engine | Your machine | Reads the PR diff, local checkout, AST rules, YAML rules, and indexed graph. |
 | GitHub App | GitHub + Memtrace auth service | Lets Memtrace post review comments and read PR replies. |
 | Watch loop | Your machine | Picks up `@memtrace` commands and executes them locally. |
-| Optional fix agent | Your machine | Applies `@memtrace fix this` in an isolated worktree when configured. |
+| Optional fix agent | Your machine | Applies `@memtrace fix this` in an isolated worktree when a supported local agent is available. |
 
 The hosted service does not run fixes and does not need your local repo path.
 It only helps route GitHub App auth and, where available, relay relevant
@@ -130,14 +130,14 @@ with if I want a fix.
 
 Agent support has two layers:
 
-| Capability | Claude Code | Codex | Cursor | Windsurf | VS Code/Copilot |
+| Capability | Claude Code | Codex | Cursor | Gemini CLI | Other MCP agents |
 |---|---:|---:|---:|---:|---:|
 | Memtrace skills + MCP | yes | yes | yes | yes | yes |
 | Review, rerun, explain, ignore | yes | yes | yes | yes | yes |
-| Automatic `fix this` | yes | yes | yes, when Cursor Agent is logged in | not yet | not yet |
+| Automatic `fix this` | auto | auto | auto after login | auto | custom adapter |
 
-The reviewer itself is editor-independent. Automatic local fixes need a
-headless agent runner.
+The reviewer itself is editor-independent. Automatic local fixes use whichever
+supported headless agent is available on the machine running Memtrace.
 
 ## GitHub Commands
 
@@ -150,7 +150,7 @@ comment.
 | `@memtrace rerun` | New commits landed or you changed ignore state. | Posts a new review if findings remain. |
 | `@memtrace explain` | You want a short explanation of a finding. | Best as a reply to a Memtrace inline comment. |
 | `@memtrace ignore` | The finding is not useful for this PR. | Best as a reply to a Memtrace inline comment. Future reviews suppress that finding. |
-| `@memtrace fix this` | You want a local agent to fix one finding. | Requires `MEMTRACE_PR_AGENT_COMMAND`. Same-repo PR branches only in the first version. |
+| `@memtrace fix this` | You want a local agent to fix one finding. | Uses the detected local headless agent. Same-repo PR branches only in the first version. |
 | `@memtrace merge` | You want Memtrace to ask GitHub to merge the PR. | GitHub still enforces branch protection, checks, and app permissions. |
 
 Memtrace reacts with eyes when a command is picked up. It removes that
@@ -164,42 +164,15 @@ memtrace pr sync
 memtrace pr status
 ```
 
-## Enable `@memtrace fix this`
+## Automatic Fixes
 
-`fix this` is intentionally local. Memtrace creates an isolated worktree under
-`~/.memtrace/pr-worktrees/`, sends JSON context to your configured agent, then
-commits and pushes the result to the PR branch if files changed.
+For `@memtrace fix this`, Memtrace creates an isolated worktree, asks a local
+headless agent to make the narrow edit, then commits and pushes the result back
+to the PR branch.
 
-Memtrace only needs an executable command. The command receives JSON on stdin,
-edits the isolated worktree, prints a short summary, and exits `0` on success.
-
-The examples below use the helper adapter from a Memtrace source checkout. If
-your installed package does not include that helper yet, point
-`MEMTRACE_PR_AGENT_COMMAND` at your own wrapper with the same stdin contract.
-Most users only need this section when they want `@memtrace fix this`.
-
-Configure one provider before starting watch mode.
-
-Codex:
-
-```bash
-export MEMTRACE_PR_AGENT_COMMAND="$PWD/scripts/pr-agents/memtrace-pr-agent codex"
-```
-
-Claude Code:
-
-```bash
-export MEMTRACE_PR_AGENT_COMMAND="$PWD/scripts/pr-agents/memtrace-pr-agent claude"
-```
-
-Cursor Agent:
-
-```bash
-cursor agent login
-export MEMTRACE_PR_AGENT_COMMAND="$PWD/scripts/pr-agents/memtrace-pr-agent cursor"
-```
-
-Then run the watched review:
+For normal use, there is nothing else to configure. If Codex, Claude Code,
+Cursor Agent, or Gemini CLI is installed and authenticated, Memtrace can detect
+it automatically.
 
 ```bash
 memtrace code-review \
@@ -209,19 +182,33 @@ memtrace code-review \
   --repo-root "$PWD"
 ```
 
-Windsurf and VS Code/Copilot can use Memtrace skills and MCP today. Automatic
-`fix this` is not wired for them until there is a supported headless local agent
-adapter.
+Then reply to a Memtrace inline review comment:
 
-Custom adapter contract:
+```text
+@memtrace fix this
+```
+
+If multiple supported agents are installed, choose one explicitly:
+
+```bash
+MEMTRACE_PR_AGENT_PROVIDER=codex \
+  memtrace code-review \
+    --pr https://github.com/OWNER/REPO/pull/123 \
+    --post \
+    --watch
+```
+
+Supported provider values are `codex`, `claude`, `cursor`, and `gemini`.
+Cursor may require `cursor agent login` first.
+
+For other headless agents, use a custom adapter:
 
 ```bash
 export MEMTRACE_PR_AGENT_COMMAND="/path/to/your-agent-wrapper"
 ```
 
-Your wrapper receives a JSON payload with the PR URL, worktree path, command,
-triggering comment, target finding, and head SHA. Exit non-zero when no safe fix
-can be made; Memtrace will reply on GitHub with the failure reason.
+That wrapper receives the PR context as JSON on stdin. Most users should not
+need this.
 
 ## Typical Feature Workflow
 
@@ -315,7 +302,8 @@ Things that can block the workflow:
 - The repo has not been indexed on this machine.
 - The local checkout is not the PR branch.
 - The PR was not started with `--post --watch`.
-- `@memtrace fix this` has no configured headless agent command.
+- `@memtrace fix this` cannot find Codex, Claude Code, Cursor Agent, Gemini CLI,
+  or a custom adapter.
 - GitHub rejects a merge because checks, branch protection, or permissions fail.
 
 For finding-specific commands, reply to the Memtrace inline review comment:
