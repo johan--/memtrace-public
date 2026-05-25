@@ -8,14 +8,16 @@ Either way, analysis happens on your machine.
 
 ## The Short Version
 
-1. Start Memtrace in the repository.
+1. Make sure the repository is indexed locally.
 2. Make a feature branch and open a GitHub pull request.
 3. Run `memtrace code-review --post --watch` on the PR.
-4. Reply on GitHub with `@memtrace ...` commands when you want a rerun,
+4. Keep a local Memtrace owner running for watched commands: `memtrace start`,
+   a headless daemon, or an active `memtrace mcp` session.
+5. Reply on GitHub with `@memtrace ...` commands when you want a rerun,
    explanation, ignore, local fix, or merge attempt.
 
 ```bash
-memtrace start
+# If this repo is not indexed yet:
 memtrace index .
 
 git checkout -b feat/my-change
@@ -60,6 +62,9 @@ For code review, the important checks are repository-specific:
 - The repository has been indexed by Memtrace.
 - The Memtrace GitHub App is installed on that GitHub repository.
 - Use `--post --watch` when you want `@memtrace` PR comments to work.
+- Keep one local Memtrace owner running while you expect commands to
+  execute: `memtrace start`, the headless daemon service, or an active
+  `memtrace mcp` process.
 
 Useful checks:
 
@@ -313,7 +318,6 @@ weaker.
 Run this from the repository root before expecting graph review:
 
 ```bash
-memtrace start
 memtrace index .
 memtrace status
 ```
@@ -342,11 +346,10 @@ memtrace code-review --pr https://github.com/OWNER/REPO/pull/123 --post --watch
 ```
 
 The local machine that armed the watch is the machine that executes the command.
-If that machine is offline, stopped, logged out, or missing the saved watch
-state, GitHub comments will not immediately run. The hosted relay can queue
-command metadata for a short time, and GitHub polling remains a fallback, but
-local execution still requires a running local Memtrace process or a manual
-sync:
+If that machine is offline, logged out, or missing the saved watch state,
+GitHub comments will not immediately run. The hosted relay can queue command
+metadata for a short time, and GitHub polling remains a fallback, but local
+execution still requires a running local Memtrace owner or a manual sync:
 
 ```bash
 memtrace pr status

@@ -55,20 +55,45 @@ people building on top of Memtrace.
    └──────────┬──────────┘
               │ spawns
               ▼
-   ┌─────────────────────┐         ┌─────────────────────┐
-   │  memtrace mcp       │ ──────▶ │  memtrace start     │
-   │  child process      │  gRPC   │  daemon             │
-   │  stdio JSON-RPC     │ loopback│  (heavy state)      │
-   └─────────────────────┘  :50051 └─────────────────────┘
+   ┌─────────────────────┐
+   │  memtrace mcp       │
+   │  child process      │
+   │  stdio JSON-RPC     │
+   └──────────┬──────────┘
+              │
+              │ attaches to an existing owner,
+              │ or becomes the owner if none exists
+              ▼
+   ┌─────────────────────┐
+   │ workspace owner     │
+   │ one per .memdb      │
+   │ (MemDB, models,     │
+   │  indexes, loopback) │
+   └─────────────────────┘
 ```
 
-The agent spawns one `memtrace mcp` per session. That child process
-attaches to the `memtrace start` daemon over a localhost gRPC loopback
-(default `127.0.0.1:50051`) — the daemon owns the heavy state (MemDB,
-models, indexes); the child is thin.
+The agent spawns one `memtrace mcp` per session. That process first
+checks whether the current workspace already has a Memtrace owner:
 
-When you close your Claude Code window, the child exits. Next session
-spawns a new child. The daemon keeps running.
+- If `memtrace start`, a headless daemon, or another `memtrace mcp`
+  already owns the workspace, the new process attaches over localhost
+  loopback and stays thin.
+- If nothing owns the workspace yet, the first `memtrace mcp` becomes
+  the owner itself and opens the embedded MemDB.
+
+That means a normal agent-only setup does not require a separate
+`memtrace start` command. Run `memtrace start` when you want the local
+dashboard, live file watcher, PR command polling, or a visible
+foreground owner.
+
+This ownership step does not index an unknown repository by itself.
+Index each repo once with `memtrace index .`, `memtrace start`
+auto-indexing, or the MCP `index_directory` tool before expecting
+graph-backed answers.
+
+When you close your Claude Code window, the stdio child exits. If it
+was only attached, the owner keeps running. If it was the owner, the
+owner exits with that MCP session.
 
 ### Setup
 
@@ -111,14 +136,16 @@ these files.
 
 ```
    ┌─────────────────────┐
-   │  memtrace start     │ ◄────── gRPC loopback :50051
-   │  daemon             │
-   │  (heavy state:      │
+   │  workspace owner    │ ◄────── optional existing loopback
+   │  (start, daemon,    │
+   │   or HTTP mcp)      │
+   │  heavy state:       │
    │   MemDB, models,    │
-   │   indexes)          │
+   │   indexes           │
    └──────────┬──────────┘
               │
-              │ in-process (or separate process)
+              │ in-process when HTTP mcp is the owner,
+              │ loopback when it attaches to another owner
               ▼
    ┌─────────────────────┐
    │  memtrace mcp       │
@@ -140,8 +167,10 @@ these files.
    └─────────┴─────────┴─────────┴─────────┘
 ```
 
-One `memtrace mcp` process. One HTTP endpoint. Many concurrent agent
-sessions, each with their own session id in the request header.
+One `memtrace mcp` HTTP process. One HTTP endpoint. Many concurrent
+agent sessions, each with their own session id in the request header.
+That HTTP process can own the workspace itself or attach to an
+already-running owner.
 
 ### Setup
 
@@ -220,16 +249,18 @@ your AI tool's MCP setup guide for the current shape.
 If you're building a platform on top of Memtrace (orchestrator,
 dashboard, agent fleet), the layout you want is:
 
-1. **One `memtrace start` per host.** Owns MemDB, models, watchers.
-   Long-lived. Restart only on upgrade.
-2. **One `memtrace mcp` per host** with `MEMTRACE_TRANSPORT=streamable-http`
-   and a stable `MEMTRACE_PORT`. Long-lived.
+1. **One workspace owner per indexed workspace.** This can be
+   `memtrace start`, a headless daemon service, or the HTTP
+   `memtrace mcp` process itself.
+2. **One `memtrace mcp` HTTP endpoint per host/workspace** with
+   `MEMTRACE_TRANSPORT=streamable-http` and a stable
+   `MEMTRACE_PORT`.
 3. **Your platform proxies to that endpoint**, multiplexing many
    concurrent agent sessions through it via session ids.
 
-Why not "one `memtrace mcp` per agent session"? You'd be paying a
-50–150 ms startup cost per session and re-loading models. With HTTP
-the heavy state is loaded once.
+Why not "one HTTP `memtrace mcp` per agent session"? You would pay
+startup overhead per session and make ownership more complex. With
+one HTTP endpoint, the heavy state is loaded once.
 
 Why not "spawn `memtrace mcp` per call"? You'd pay startup on every
 single tool call. Even worse than per-session — please don't.
@@ -259,26 +290,30 @@ changes.
 
 ### "Can I run multiple `memtrace start` daemons on one host?"
 
-Yes, but each needs its own `MEMTRACE_MEMDB_LOOPBACK_PORT` and its
-own `MEMTRACE_MEMDB_DATA_DIR`. Useful for isolating per-tenant state
-on a multi-user box.
+Yes, but not for the same `.memdb` directory. Memtrace uses an
+owner lock inside `.memdb`, so a second owner for the same workspace
+attaches or refuses rather than opening the embedded store again.
+
+Separate workspaces are fine. Give each one its own
+`MEMTRACE_MEMDB_DATA_DIR`; set `MEMTRACE_MEMDB_LOOPBACK_PORT` only
+when you need stable, non-default loopback ports.
 
 ### "Can the same `memtrace mcp` process serve both stdio and HTTP?"
 
 No. You pick one transport per process. You can run two `memtrace mcp`
 processes — one stdio (for your local agent) and one HTTP (for your
-orchestrator) — both attached to the same daemon.
+orchestrator). One may own the workspace; the other attaches.
 
 ### "Does the stdio child stay running between tool calls within a session?"
 
 Yes. The child stays alive for the lifetime of the agent session. The
 agent reuses the open stdio pipe across many `find_code` / `find_symbol`
-/ etc. calls. So per-tool-call cost is just the gRPC roundtrip to the
-daemon — sub-millisecond on localhost.
+/ etc. calls. So per-tool-call cost is either an in-process graph call
+or a localhost loopback roundtrip to the owner.
 
-### "What happens if the daemon dies while an MCP session is open?"
+### "What happens if the owner dies while an MCP session is open?"
 
-The MCP child gets a connection error from the gRPC loopback and
-returns a clean error to the agent. The next `memtrace start` brings
-the daemon back; reopen your editor and the MCP child is fresh too.
-No state is lost — the graph is on disk, not in process memory.
+An attached MCP process gets a loopback connection error and returns
+a clean error to the agent. Start Memtrace again, or restart the
+agent session so a fresh `memtrace mcp` can become the owner. No
+graph data is lost — the graph is on disk, not in process memory.

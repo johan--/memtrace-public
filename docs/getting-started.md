@@ -111,6 +111,41 @@ second. For Django (~3,300 files) it's around 14 seconds. The numbers
 in [`performance-tuning.md`](performance-tuning.md) cover bigger
 repos.
 
+## How `start`, `index`, and `mcp` fit together
+
+These commands are often confused because they all touch the same
+local graph. The short version:
+
+| Command | What it is for | Keeps running? |
+|---|---|---|
+| `memtrace index .` | Build or refresh the graph for the current repo. | No |
+| `memtrace start` | Run the local UI, watcher, PR command loop, and workspace owner in the foreground. | Yes |
+| `memtrace mcp` | The MCP server your agent launches for tool calls. It attaches to an existing owner or becomes the owner if none is running. | Yes, for the agent session |
+
+You do **not** need to run both `memtrace start` and `memtrace mcp`.
+Most agents launch `memtrace mcp` automatically from their MCP config.
+Run `memtrace start` when you want the dashboard at
+`http://localhost:3030`, live file watching, or PR comment commands
+running in a visible terminal.
+
+Owning the workspace is not the same as indexing it. If the repo has
+never been indexed, `memtrace mcp` can start successfully but graph
+tools will have little or no project context until you run
+`memtrace index .`, run `memtrace start` and let auto-index finish,
+or ask an MCP-enabled agent to call `index_directory`.
+
+If you want Memtrace available without an open terminal, use the
+daemon service commands where supported:
+
+```bash
+memtrace daemon install
+memtrace daemon start
+```
+
+That gives the machine a background workspace owner. Later
+`memtrace mcp` processes attach to it instead of opening another
+embedded MemDB.
+
 ## Tell your agent to use Memtrace
 
 If you installed via npm, the integrations for the major AI tools are

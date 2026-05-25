@@ -233,16 +233,23 @@ memtrace install
 Most MCP clients only load servers at startup. After `memtrace install`,
 **fully quit and reopen** Claude Code / Cursor / etc.
 
-### Is the daemon running?
+### Is there a workspace owner?
 
-The MCP child needs the daemon. If `memtrace start` isn't running,
-the MCP child connects to a dead loopback gRPC and returns errors.
+`memtrace mcp` can run without a separate `memtrace start`; if no
+owner exists, it becomes the owner for that agent session. If
+`memtrace start` or a headless daemon is already running, `memtrace
+mcp` attaches to it.
+
+If the agent reports connection errors or empty state, check what
+Memtrace thinks is active:
 
 ```bash
 memtrace status
 ```
 
-Should print "MemDB ready" or similar. If not, start the daemon.
+It should print the resolved data directory and indexed repository
+counts. If you want a persistent foreground owner while debugging,
+run `memtrace start` from the repository root.
 
 ### Did the agent skill not get installed?
 
@@ -616,24 +623,17 @@ into the multi-GB range. Common variants users have reported:
   `{"pid": null, "status": "healthy"}` while processes are very
   much alive.
 
-**Why this happens (current v0.4.60).** The daemon does not yet:
+**What should happen in current versions.** Memtrace keeps an
+owner lock in the resolved `.memdb` directory. Only one process
+should own embedded MemDB for a workspace. Additional `memtrace mcp`
+processes should attach over localhost loopback and stay thin.
 
-1. **Refuse to start when another daemon owns the data dir.** Every
-   `memtrace mcp` invocation spawns a fresh worker — no PID-file lock
-   on `<data_dir>/.memdb/`.
-2. **Cap its own RAM ceiling.** No `RLIMIT_AS` (Linux/macOS) or
-   `JobObject` (Windows) bound on the long-running process.
-3. **Cap its own CPU budget.** No `RLIMIT_CPU` — a wedged loop
-   pegs one core indefinitely.
-4. **Self-terminate after an idle window.** If your supervisor
-   (Orbit, systemd unit, launchctl) dies, the worker keeps running.
-5. **Cross-check the supervisor's heartbeat.** A stale
-   `daemon-state.json` doesn't trigger a worker self-suicide.
+It is normal to see more than one `memtrace` process when multiple
+agents or transports are open. It is not normal for each one to grow
+into a heavy owner for the same `.memdb`.
 
-The v0.4.60 memory-footprint round shrank per-process RSS by
-~15%, but does not address this class of bug.
-
-**Mitigation right now.** If you see this, kill the older processes
+If you see multiple heavy owners after upgrading, first check for
+stale old processes from a pre-fix version. Kill the older processes
 manually:
 
 ```bash
@@ -656,21 +656,16 @@ Then restart your supervisor cleanly:
 memtrace stop && memtrace start
 ```
 
-If you're orchestrating Memtrace via an external supervisor
-(Orbit, Claude Code's session manager, a CI runner), check that
-supervisor's process tree too — the daemon-state file going stale
-typically means the supervisor itself crashed silently.
+If it comes back immediately, collect:
 
-**Permanent fix.** Tracked for an upcoming release. The fix
-introduces a process memory ceiling (`MEMTRACE_MAX_RSS_MB`,
-default 4 GB), a CPU-time ceiling (`MEMTRACE_MAX_CPU_SECS`,
-default disabled), an idle-shutdown timer
-(`MEMTRACE_IDLE_SHUTDOWN_SECS`, default 1 hour), a spawn-time
-lock so a second daemon refuses to start when one already owns
-the data dir, and a supervisor-heartbeat watchdog
-(`MEMTRACE_SUPERVISOR_HEARTBEAT_FILE`) so the worker
-self-terminates cleanly if its orchestrator dies. Watch the
-release notes for confirmation.
+```bash
+memtrace status
+ls -la .memdb/daemon.pid .memdb/daemon-state.json
+cat .memdb/daemon-state.json
+```
+
+and open an issue. That means the owner lock or attachment path is
+not behaving as intended on your host.
 
 ## Still stuck?
 

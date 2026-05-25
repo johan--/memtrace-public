@@ -30,7 +30,7 @@ look up later":
 
 | Doc | What's in it |
 |---|---|
-| [`getting-started.md`](getting-started.md) | Install, first-run walkthrough, `memtrace start` + `memtrace index`, what to expect on a fresh machine. |
+| [`getting-started.md`](getting-started.md) | Install, first-run walkthrough, how `memtrace start`, `memtrace index`, and `memtrace mcp` relate, what to expect on a fresh machine. |
 | [`code-reviewer.md`](code-reviewer.md) | How to use Memtrace as a GitHub PR reviewer from the CLI or an agent: feature branch, PR, posted review, watched commands, and optional local fixes. |
 | [`cli-reference.md`](cli-reference.md) | Current `memtrace --help` command surface: start/status/index/MCP, code review, PR watches, embedding provider commands, flags, and key env vars. |
 | [`architecture.md`](architecture.md) | High-level picture of the components — daemon, MCP server, MemDB, indexer, embedding pipeline. No deep internals; just enough to reason about behaviour. |
@@ -51,7 +51,7 @@ look up later":
 # Install
 npm install -g memtrace
 
-# Start the daemon (auto-indexes the project you launch it from)
+# Start the local owner + UI (auto-indexes the project you launch it from)
 memtrace start
 
 # In another terminal: open the local UI
@@ -66,6 +66,11 @@ open http://localhost:3030
 # The agent will use memtrace's `find_code` tool — exact file:line
 # answers, no grep needed.
 ```
+
+For agent-only workflows, your AI tool can launch `memtrace mcp`
+without a separate `memtrace start`. It attaches to an existing
+workspace owner when one is running, or becomes the owner itself for
+that session.
 
 That's the headline. Everything below is for when you want to go
 deeper.

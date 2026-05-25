@@ -96,6 +96,8 @@ touch them):
 
 ```
 .memdb/
+├── daemon.pid                     # workspace-owner lock
+├── daemon-state.json              # owner endpoint + heartbeat
 └── memtrace/                     # database name
     ├── wal/                      # write-ahead log
     ├── episodes/                 # commit + working-tree snapshots
@@ -104,6 +106,13 @@ touch them):
     ├── tantivy/                  # BM25 full-text segments
     └── manifest.toml             # MemDB metadata
 ```
+
+`daemon.pid` and `daemon-state.json` are runtime coordination files,
+not graph data. They let `memtrace start`, `memtrace mcp`, and the
+headless daemon agree on a single owner for this `.memdb`. If another
+process already owns the lock, later `memtrace mcp` processes attach
+to that owner's loopback endpoint instead of opening a duplicate
+embedded MemDB.
 
 Size grows roughly linearly with your codebase. Some rough numbers:
 

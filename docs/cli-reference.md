@@ -17,11 +17,12 @@ memtrace --help
 
 | Command | Purpose |
 |---|---|
-| `memtrace start` | Start the local UI/API server against MemDB. This is also the default command when you run `memtrace` with no subcommand. |
+| `memtrace start` | Start the local UI/API server, file watcher, PR command loop, and workspace owner against MemDB. This is also the default command when you run `memtrace` with no subcommand. |
 | `memtrace stop` | Stop the running Memtrace daemon. |
 | `memtrace status` | Show backend, index, and runtime status. |
-| `memtrace mcp` | Run the MCP server for Claude, Cursor, Codex, and other MCP-compatible agents. |
-| `memtrace index <path>` | Index a repository or workspace into MemDB. |
+| `memtrace mcp` | Run the MCP server for Claude, Cursor, Codex, and other MCP-compatible agents. It attaches to an existing workspace owner or becomes the owner if none is running. |
+| `memtrace index <path>` | Index a repository or workspace into MemDB, then exit. |
+| `memtrace daemon install/start/status/stop` | Install or control the optional background service where supported. |
 | `memtrace code-review --pr <url>` | Review a GitHub pull request using local Memtrace context. |
 | `memtrace pr status` | Show local PR watches registered by `memtrace code-review --post --watch`. |
 | `memtrace pr sync` | Poll watched PRs once via the installed GitHub App. |
@@ -39,6 +40,22 @@ memtrace --help
 | `memtrace embed test` | Probe the active embedding provider and report latency/dimensions. |
 | `memtrace version` | Print the installed version. |
 | `memtrace help` | Show top-level help. |
+
+## Command roles
+
+`memtrace index`, `memtrace start`, and `memtrace mcp` all use the
+same local `.memdb` store, but they have different lifetimes:
+
+- `memtrace index .` is a one-shot graph build or refresh.
+- `memtrace start` is the visible local owner: UI, watcher, PR command
+  loop, and API server.
+- `memtrace mcp` is the agent-facing MCP server. It attaches to the
+  visible owner if one exists; otherwise it can own the workspace
+  itself for agent-only workflows.
+
+Memtrace keeps an owner lock in the resolved `.memdb` directory, so
+multiple agent sessions should not open duplicate embedded MemDB
+owners for the same workspace.
 
 ## Global flags
 

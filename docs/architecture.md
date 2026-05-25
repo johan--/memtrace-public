@@ -13,20 +13,22 @@ about behaviour and pick the right knobs — no deep internals.
                               │ stdio  -or-  streamable-HTTP
                               ▼
    ┌─────────────────────────────────────────────────────────────┐
-   │  memtrace mcp           — translates MCP calls to graph     │
-   │  (a thin process)         queries                           │
+   │  memtrace mcp           — agent-facing MCP server           │
+   │  (stdio or HTTP)          attaches to an owner, or becomes   │
+   │                           the owner if none is running       │
    └─────────────────────────────────────────────────────────────┘
-                              │ in-process
+                              │ localhost loopback when attached
                               ▼
    ┌─────────────────────────────────────────────────────────────┐
-   │  memtrace start         — long-running daemon               │
-   │  (the heavy process)    holds:                              │
+   │  WORKSPACE OWNER        — one per .memdb directory           │
+   │  (start, daemon, or      holds:                              │
+   │   first mcp process)                                          │
    │                           · the knowledge graph + vectors   │
    │                           · indexer + file watcher          │
    │                           · embedding model (local ONNX)    │
    │                           · cross-encoder reranker          │
    │                           · full-text (BM25) index          │
-   │                           · local UI on :3030               │
+   │                           · local UI when started via start  │
    └─────────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -39,11 +41,29 @@ about behaviour and pick the right knobs — no deep internals.
    └─────────────────────────────────────────────────────────────┘
 ```
 
-## Two processes, one engine
+## Three commands, one workspace owner
 
-There are exactly **two** things you might run:
+The commands are different entry points into the same local graph.
+They are not three separate databases.
 
-### `memtrace start` — the daemon
+### `memtrace index <path>` — build or refresh the graph
+
+One-shot indexing. It opens the resolved MemDB store, scans the repo,
+writes symbols/edges/vectors, then exits. It does not keep the UI open
+and it does not keep a file watcher running.
+
+Use it when:
+
+- You want to index a repo explicitly.
+- You are in CI or a script.
+- A PR review says graph context is missing.
+- You do not need the dashboard or live file watching right now.
+
+If a workspace owner is already running, indexing uses the same local
+store. If no owner is running, the command opens the store just long
+enough to finish the indexing job.
+
+### `memtrace start` — local UI, watcher, and owner
 
 The heavy process. It:
 - Opens the MemDB knowledge graph on disk
@@ -54,28 +74,66 @@ The heavy process. It:
 - Exposes a loopback gRPC endpoint (default `127.0.0.1:50051`)
   for `memtrace mcp` processes to attach to
 
-Run it once per host. It stays alive across editor sessions, terminal
-restarts, and CI runs. Stop it explicitly with `memtrace stop` or by
-killing the process.
+Run it when you want the dashboard, live indexing, PR command polling,
+or an easy foreground process you can stop with Ctrl-C. If another
+owner already holds the same `.memdb`, `memtrace start` attaches to
+that owner instead of opening a second heavy process.
 
-### `memtrace mcp` — the agent's MCP face
+### `memtrace mcp` — the agent's MCP server
 
-A thin process that speaks the Model Context Protocol — JSON-RPC over
-either stdio or HTTP. When an agent (Claude Code, Cursor, …) makes a
-tool call like `find_symbol`, this process:
+A process that speaks the Model Context Protocol — JSON-RPC over
+either stdio or HTTP. Your agent usually starts this for you from its
+MCP config:
 
-1. Parses the MCP request
-2. Forwards it to the daemon over a localhost loopback channel
-3. Translates the daemon's response back into MCP JSON
-4. Streams it to the agent
+```json
+{ "command": "memtrace", "args": ["mcp"] }
+```
 
-Spawning a `memtrace mcp` process is cheap (~50 ms) — the heavy
-state lives in the daemon. Most users have one `memtrace mcp` per
-agent session. Orchestration platforms run a single one in
-streamable-HTTP mode and multiplex many agent sessions through it.
-See [`mcp-and-transports.md`](mcp-and-transports.md).
+When an agent makes a tool call like `find_symbol`, `memtrace mcp`:
 
-## What the daemon actually does
+1. Resolves the workspace and `.memdb` directory.
+2. Checks whether a workspace owner is already running.
+3. If yes, attaches over localhost loopback and stays thin.
+4. If no, becomes the owner for that workspace itself.
+5. Translates tool results back into MCP JSON for the agent.
+
+This means you do **not** have to run both `memtrace start` and
+`memtrace mcp`. `memtrace start` is for the UI, live watcher, and a
+visible foreground owner. `memtrace mcp` is enough for an agent-only
+workflow.
+
+Becoming an owner does not imply the repository is already indexed.
+On a fresh repo, run `memtrace index .`, run `memtrace start` and let
+auto-index finish, or let an MCP-enabled agent call `index_directory`
+before expecting graph-backed answers.
+
+### Headless service mode
+
+When you want Memtrace to stay available without an open terminal, use
+the daemon service commands (`memtrace daemon install`, then
+`memtrace daemon start`) where supported. That gives the machine a
+background workspace owner. Later `memtrace mcp` processes attach to
+it instead of opening their own embedded MemDB.
+
+## How duplicate owners are avoided
+
+Memtrace keeps an owner lock and state file in the resolved `.memdb`
+directory:
+
+- `.memdb/daemon.pid` — OS-held advisory lock; only one live process
+  can hold it.
+- `.memdb/daemon-state.json` — loopback endpoint, UI port, PID, and
+  heartbeat metadata for attached processes.
+
+If two agents start `memtrace mcp` at the same time, only one process
+can acquire the owner lock. The other waits briefly for the state file
+to become reachable, then attaches. It will not open the same embedded
+MemDB files again.
+
+Separate repositories or workspaces can still have separate owners,
+because their locks live in different `.memdb` directories.
+
+## What the owner and indexer actually do
 
 ### Indexing
 
@@ -103,8 +161,9 @@ When you `memtrace start` in a new repo (or run `memtrace index <path>`):
    the bi-temporal layer that powers `as_of` queries and evolution
    tracking.
 
-This is what the daemon does at startup and continuously as files
-change. You don't need to trigger anything.
+This is what indexing does during startup, explicit `memtrace index`
+runs, and live watcher updates. Once the watcher is running, you
+do not need to trigger anything after normal file saves.
 
 ### Searching
 
@@ -132,7 +191,7 @@ edits, not just the current snapshot. Six scoring modes (impact,
 novelty, recency, directional, compound, overview) let agents ask
 different temporal questions.
 
-## What the daemon doesn't do
+## What Memtrace doesn't do
 
 - **It doesn't send your code anywhere.** Indexing, embedding,
   reranking — all local. Only license-validation pings and
@@ -166,10 +225,10 @@ scrubs orphan entries.
 
 ## Single-machine vs orchestrator topologies
 
-Most users run one daemon, one agent. Orchestration platforms
-(Orbit, agent dashboards) run one daemon and many concurrent agent
-sessions through a single `memtrace mcp` HTTP endpoint —
-`MEMTRACE_TRANSPORT=streamable-http`. See
+Most users run one workspace owner and one agent. Orchestration
+platforms (Orbit, agent dashboards) usually run one long-lived owner
+and many concurrent agent sessions through a single `memtrace mcp`
+HTTP endpoint — `MEMTRACE_TRANSPORT=streamable-http`. See
 [`mcp-and-transports.md`](mcp-and-transports.md).
 
 ## What "MemDB" is, briefly
