@@ -44,7 +44,7 @@ Memtrace has four moving parts in the review flow:
 | Review engine | Your machine | Reads the PR diff, local checkout, AST rules, YAML rules, and indexed graph. |
 | GitHub App | GitHub + Memtrace auth service | Lets Memtrace post review comments and read PR replies. |
 | Watch loop | Your machine | Picks up `@memtrace` commands and executes them locally. |
-| Optional fix agent | Your machine | Applies `@memtrace fix this` in an isolated worktree when a supported local agent is available. |
+| Optional fix agent | Your machine | Applies `@memtrace fix this` in a temporary PR checkout when a supported local agent is available. |
 
 The hosted service does not run fixes and does not need your local repo path.
 It only helps route GitHub App auth and, where available, relay relevant
@@ -166,9 +166,9 @@ memtrace pr status
 
 ## Automatic Fixes
 
-For `@memtrace fix this`, Memtrace creates an isolated worktree, asks a local
-headless agent to make the narrow edit, then commits and pushes the result back
-to the PR branch.
+For `@memtrace fix this`, Memtrace uses a temporary checkout of the PR branch,
+asks a local headless agent to make the narrow edit, then commits and pushes
+the result back to the PR. Your active working directory is left alone.
 
 For normal use, there is nothing else to configure. If Codex, Claude Code,
 Cursor Agent, or Gemini CLI is installed and authenticated, Memtrace can detect
