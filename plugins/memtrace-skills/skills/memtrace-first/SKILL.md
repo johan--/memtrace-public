@@ -122,6 +122,7 @@ If not indexed → offer to index with `mcp__memtrace__index_directory`, then fo
 | What files change together? | `get_cochange_context` |
 | Architecture overview | `list_communities` + `find_central_symbols` |
 | About to edit / quote — need exact lines | Bounded `Read(file, offset=start_line, limit=N)` (preferred), or `get_source_window` for path-resolution parity |
+| About to choose between competing idioms (ternary vs if-else, arrow vs fn-decl, const vs let, await vs `.then`) | `get_style_fingerprint(repo_id, file_path)` — empirical codebase norm; see `memtrace-style-fingerprint` workflow |
 
 ## Standard Workflows
 
@@ -147,6 +148,7 @@ If not indexed → offer to index with `mcp__memtrace__index_directory`, then fo
 1. `find_symbol` → confirm you have the right target
 2. `get_symbol_context` → understand full context
 3. `get_impact` → know blast radius before touching anything
+4. `get_style_fingerprint(repo_id, file_path=<file>)` → match the codebase's empirical idiom (ternary vs if-else, arrow vs fn-decl, etc.) — see `memtrace-style-fingerprint` workflow for the full decision rule
 
 ## Red Flags — STOP, Use Memtrace Instead
 
