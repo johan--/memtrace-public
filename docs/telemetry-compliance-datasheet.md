@@ -119,6 +119,25 @@ The location field is the crate file path *inside the Memtrace binary*, not a cu
 
 Crash reports are written synchronously to `~/.memtrace/telemetry/queue.jsonl` inside the panic hook, so a hard crash that exits the process still leaves a breadcrumb. They flush to the ingestion endpoint on the next successful binary run.
 
+### 3.5 Rail shadow records (`rail_shadow` table)
+
+Memtrace Rail is an optional router that can intercept code-discovery searches (grep/ripgrep/find for source symbols) and answer them from the Memtrace graph. When Rail is active it records a **content-free** measurement of what it *would* have returned — the dataset used to decide whether Rail is reliable enough to enable by default. No part of the search query, the matched files, or any result content is captured.
+
+| Field | Type | Notes |
+|---|---|---|
+| Identity fields (§3.1) | — | `device_id`, `version`, `os` — same as other streams |
+| `mode` | enum | `observe` / `nudge` / `rail` / `strict` |
+| `surface` | enum | always `memtrace_owned` (a source-symbol search in an indexed repo) |
+| `would_route` | bool | whether Rail would route this search to Memtrace |
+| `shape` | enum | `identifier` / `alternation` / `phrase` / `regex` / `empty` — the **shape** of the search pattern, derived locally; never the pattern text |
+| `retrieval` | enum | `hit` / `miss` / `unavailable` — did Memtrace return a confident result |
+| `score_bucket` | enum | `lt10` / `b10` / `b25` / `gte50` — bucketed relevance score, never the raw float |
+| `relevance_proxy` | bool | computed **on-device**: did the top result's name/path contain a token from the search? Only the boolean is transmitted; the strings are compared locally and discarded |
+| `latency_bucket` | enum | `fast` (<100 ms) / `mid` / `slow` |
+| `occurred_at` | timestamp | When the search happened locally |
+
+**Conditions for emission.** Produced by default in `observe` mode (every install), one row per Memtrace-owned code search. It is measured **asynchronously, off the user's critical path**: the search hook records a request to a local spool and returns immediately — it issues no query — and the long-running daemon performs the retrieval in the background. The search therefore incurs **no added latency**. Enforcing modes (`memtrace rail enable nudge|rail|strict`) additionally measure inline. Opt-out: `MEMTRACE_TELEMETRY=off` (all telemetry) or `MEMTRACE_RAIL_SHADOW=off` (Rail only); `MEMTRACE_RAIL_SHADOW_SAMPLE` (0–1) bounds the background sampling rate. Records do not pass through the §4 text sanitiser because they contain no free-text fields — only enums, buckets, and booleans.
+
 ---
 
 ## 4. Sanitisation pipeline
@@ -226,7 +245,7 @@ For a regulated environment, the recommended posture is:
 |---|---|
 | Operator | Syncable ApS (Denmark, EU) |
 | Storage location | Memtrace-operated PostgreSQL on `*.memtrace.io` infrastructure |
-| Tables | `telemetry_events`, `telemetry_errors`, `telemetry_crashes` |
+| Tables | `telemetry_events`, `telemetry_errors`, `telemetry_crashes`, `rail_shadow` (content-free Rail routing-quality buckets; emitted only when Rail is enabled) |
 | Schema | [`memtrace-ui/drizzle/0002_telemetry.sql`](https://github.com/syncable-dev/memtrace-public) (closed-source repo; available under NDA for compliance review) |
 | Retention | No automatic purge today. Retention policy of 90 days is committed before the dataset exceeds 90 days of history. Material changes announced in release notes. |
 | Access | Admin analytics dashboard at `https://memtrace.io/admin/analytics`, gated to `@syncable.dev` email accounts via authenticated session. No third-party access. |

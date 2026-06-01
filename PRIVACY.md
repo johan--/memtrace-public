@@ -57,14 +57,15 @@ The one exception is the **Weekly Memtrace Receipt** feature (off by default, op
 | | |
 |:--|:--|
 | **Endpoint** | `POST https://memtrace.io/api/telemetry/ingest` |
-| **Data sent** | App-start events, indexing/embedding durations, aggregate PR review/watch counters, panic reports, and `WARN`/`ERROR` log lines from Memtrace's own crates — **all sanitised** to strip home-dir paths, token-shaped strings, and email addresses |
-| **Purpose** | Catch crashes and regressions across the user base (the M3-Air "stuck on Loading embedding model" hang, Windows MSVC build failures, etc. are exactly the kind of thing this is for) |
+| **Data sent** | App-start events, indexing/embedding durations, aggregate PR review/watch counters, panic reports, and `WARN`/`ERROR` log lines from Memtrace's own crates — **all sanitised** to strip home-dir paths, token-shaped strings, and email addresses. Plus content-free **Rail routing-quality** buckets (mode, pattern *shape*, hit/miss, a bucketed score, and a local relevance yes/no) — never the search text or which files matched. The Rail buckets are measured **asynchronously by the background daemon**, so they never add latency to a search |
+| **Purpose** | Catch crashes and regressions across the user base (the M3-Air "stuck on Loading embedding model" hang, Windows MSVC build failures, etc. are exactly the kind of thing this is for); and, for Rail, measure whether graph-backed search results are relevant — so the decision to make Rail active by default is backed by real evidence |
 | **Frequency** | Batched flush every 60 seconds while running |
-| **Opt-out** | `MEMTRACE_TELEMETRY=off` (also `0`/`false`/`disabled`/`no`) |
+| **Opt-out** | `MEMTRACE_TELEMETRY=off` disables all of it (also `0`/`false`/`disabled`/`no`); `MEMTRACE_RAIL_SHADOW=off` disables just the Rail buckets; `MEMTRACE_RAIL_SHADOW_SAMPLE=0..1` bounds the background measurement rate |
 
 The telemetry payload **never** contains source code, file contents,
-symbol names, embeddings, repository paths, GitHub PR URLs, PR discussion
-text, reviewer identities, branch names, or commit
+symbol names, embeddings, repository paths, the text of your search
+commands, which files or symbols a search matched, GitHub PR URLs, PR
+discussion text, reviewer identities, branch names, or commit
 data. The schema on the receiving end has no column to hold any of
 those — we'd have to ship a new release to even start collecting them,
 and we'd announce it here first. Full breakdown: [TELEMETRY.md](TELEMETRY.md).

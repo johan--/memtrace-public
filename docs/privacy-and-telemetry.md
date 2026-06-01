@@ -59,7 +59,7 @@ regressions, and performance issues across the user base — the kind
 of bugs that otherwise only surface when someone takes the time to
 file an issue. One environment variable turns it off completely.
 
-Three streams flow through a single endpoint
+Four streams flow through a single endpoint
 (`https://memtrace.io/api/telemetry/ingest`, HTTPS, authenticated
 with the same Bearer session token your install already uses):
 
@@ -68,6 +68,7 @@ with the same Bearer session token your install already uses):
 | **Usage events** | `memtrace start` / `memtrace mcp` invocation, end of indexing, end of embedding, PR review/watch lifecycle | Subcommand, transport mode, `duration_ms`, integer counts, graph/review mode enums, PR watch status counters. No names, no content, no PR URLs, no comments. |
 | **Error reports** | Any `WARN` / `ERROR` log line from Memtrace's own crates | Sanitised log message, tracing target, level, content fingerprint. Recurring errors collapse to one row with an `occurrences` counter. |
 | **Crash reports** | Panic hook captures, written synchronously so even a hard exit leaves a breadcrumb | Sanitised panic message, `file:line` inside the Memtrace binary, sanitised Rust backtrace capped at 16 KB. |
+| **Rail shadow** | One row per Memtrace-owned code search — **on by default** in `observe`, measured **asynchronously** by the background daemon (the search hook returns instantly and never queries, so zero added latency) | Content-free routing-quality buckets only: `mode`, pattern `shape` enum, `hit`/`miss`, a bucketed score, an on-device `relevance_proxy` yes/no, and a latency bucket. **Never** the search text or which files/symbols matched. Opt out via `MEMTRACE_RAIL_SHADOW=off`. |
 
 Every payload also carries: a stable per-machine `device_id`, the
 binary version, OS string, and host-tier score. Nothing else.
@@ -94,6 +95,10 @@ for the full discussion of the sanitiser's limits.
 **Specifically NOT collected**, ever, under any configuration:
 
 - Source code or file contents
+- The text of your `grep`/`find`/search commands — Rail records only the
+  pattern *shape*, never the query
+- Which files, symbols, or results a search matched — only an on-device
+  relevance yes/no
 - Symbol names from your codebase
 - Embeddings, BM25 indices, or any derived data from your code
 - Repository names, paths, or remote URLs
@@ -205,8 +210,10 @@ All telemetry endpoints terminate on our own infrastructure
 third-party analytics SDKs are embedded in the binary — every byte
 of the pipeline is in the public repo at
 [`crates/memtrace-mcp/src/telemetry.rs`](https://github.com/syncable-dev/memtrace-public/blob/main/crates/memtrace-mcp/src/telemetry.rs).
-Storage: three Postgres tables (`telemetry_events`,
-`telemetry_errors`, `telemetry_crashes`). Access: admin dashboard
+Storage: four Postgres tables (`telemetry_events`,
+`telemetry_errors`, `telemetry_crashes`, and `rail_shadow` — the last
+holding content-free Rail routing-quality buckets, opt-out via
+`MEMTRACE_RAIL_SHADOW=off`). Access: admin dashboard
 at `https://memtrace.io/admin/analytics`, gated to `@syncable.dev`
 accounts only. We do not sell, share, or publish anonymised
 aggregates without notice.

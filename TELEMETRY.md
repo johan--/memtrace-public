@@ -14,15 +14,21 @@ and how to turn it off.
 >   needed for crash fingerprints, symbol names, or embeddings.
 > - We collect: app starts, indexing/embedding durations, panic reports,
 >   PR workflow counters, and `WARN`/`ERROR` log lines from our own crates.
-> - Set `MEMTRACE_TELEMETRY=off` to disable it completely.
-> - Default is **on for crashes and errors, on for usage events**. Opt-out
->   is one env var or one config-file line.
+> - We also collect content-free **Rail routing-quality** buckets (was the
+>   result relevant — never the search text or matched files), measured
+>   **asynchronously** by the background daemon so it never slows a search.
+> - Set `MEMTRACE_TELEMETRY=off` to disable everything (or
+>   `MEMTRACE_RAIL_SHADOW=off` for just the Rail buckets).
+> - Default is **on for crashes, errors, usage events, and the content-free
+>   Rail routing-quality buckets**. Opt-out is one env var or one config-file
+>   line.
 
 ---
 
 ## What We Collect
 
-There are three streams. Each one ships to
+There are four streams (the fourth, Rail shadow, on by default in `observe`
+and measured asynchronously off your critical path). Each one ships to
 `https://memtrace.io/api/telemetry/ingest` over HTTPS, authenticated with
 the same Bearer session token your install already uses for the heartbeat.
 
@@ -98,6 +104,47 @@ model" hang and the Windows MSVC build failures were each visible to us
 only after a user took the time to DM us — for every user who told us,
 several others probably hit the same thing and quietly uninstalled.
 
+### 4. Rail shadow telemetry (`rail_shadow`)
+
+Memtrace Rail is the optional router that can intercept code-discovery
+searches (grep/ripgrep/find for source symbols) and answer them from
+Memtrace's graph instead of raw text search. Before we ever consider making
+Rail active by default, we need evidence that its answers can be trusted — so
+when Rail is active it records a **content-free** measurement of what it
+*would* have returned, without ever capturing your search.
+
+One row per Memtrace-owned code search, carrying only categories and buckets:
+
+| Field | Example | What it is |
+|---|---|---|
+| `mode` | `observe` / `nudge` / `rail` / `strict` | Rail's operating mode |
+| `surface` | `memtrace_owned` | the search was for source symbols in an indexed repo |
+| `would_route` | `true` | whether Rail would route this to Memtrace |
+| `shape` | `identifier` / `alternation` / `phrase` / `regex` / `empty` | the **shape** of the pattern — never the text itself |
+| `retrieval` | `hit` / `miss` / `unavailable` | did Memtrace have a confident answer |
+| `score_bucket` | `lt10` / `b10` / `b25` / `gte50` | bucketed relevance score (never the raw number) |
+| `relevance_proxy` | `true` / `false` | computed **on your machine**: did the top result's name/path contain a token from the search? Only this yes/no leaves — the strings are compared locally and discarded |
+| `latency_bucket` | `fast` / `mid` / `slow` | how quickly Memtrace answered |
+
+Plus the same `device_id` / `version` / `os` envelope as the other streams.
+
+**When it sends:** by default, in `observe` mode (every install). Crucially it
+is measured **asynchronously, off your critical path**: the search hook records
+a request and returns **instantly** — it never queries the backend — and the
+long-running daemon performs the measurement in the background. So it **adds no
+latency to any search** (the `grep`/`find` runs exactly as before). Enforcing
+modes (`memtrace rail enable nudge|rail|strict`) additionally measure inline,
+since Rail already has to query in order to route. Opt out with
+`MEMTRACE_TELEMETRY=off` (all telemetry) or `MEMTRACE_RAIL_SHADOW=off` (Rail
+only); `MEMTRACE_RAIL_SHADOW_SAMPLE=0..1` bounds the background work on busy
+machines.
+
+**What this lets us see:** whether Rail's answers are actually relevant
+(precision), how often it can help (coverage), which query shapes it handles
+well, and the right confidence threshold — so any decision to make Rail
+active by default is backed by real evidence, not guesswork. What it never
+tells us: *what* you searched for, or *which* files/symbols a search matched.
+
 ---
 
 ## What We Don't Collect
@@ -107,6 +154,10 @@ We don't have to manage tradeoffs here because the categories are clean:
 data model on the receiving end has no column to put them in.
 
 - ❌ Source code or file contents
+- ❌ The text of your `grep`/`find`/search commands — Rail records only the
+  pattern *shape* (`identifier`/`regex`/…), never the query you typed
+- ❌ Which files, symbols, or results a search matched — only a local yes/no
+  relevance bucket, computed on your machine
 - ❌ Symbol names from your codebase
 - ❌ Embeddings, BM25 indices, or any derived data from your code
 - ❌ Repository names, paths, or remote URLs
@@ -135,11 +186,11 @@ in and tell us if you find a backtrace that looks too revealing.
   the existing license heartbeat. No third-party analytics SDK is
   embedded — every byte of the pipeline is in this repo at
   `crates/memtrace-mcp/src/telemetry.rs`.
-- **Storage**: three Postgres tables on the memtrace.io infrastructure
-  (`telemetry_events`, `telemetry_errors`, `telemetry_crashes`),
-  schema in `memtrace-ui/drizzle/0002_telemetry.sql`. Retention is
-  unlimited today; we'll publish a retention policy before exceeding 90
-  days of data.
+- **Storage**: four Postgres tables on the memtrace.io infrastructure
+  (`telemetry_events`, `telemetry_errors`, `telemetry_crashes`, and
+  `rail_shadow`), schema in `memtrace-ui/drizzle/0002_telemetry.sql` and
+  `memtrace-ui/drizzle/0018_rail_shadow.sql`. Retention is unlimited today;
+  we'll publish a retention policy before exceeding 90 days of data.
 - **Access**: the admin analytics dashboard at
   `https://memtrace.io/admin/analytics` is gated to `@syncable.dev`
   email accounts only. We do not share or sell this data, and we don't
