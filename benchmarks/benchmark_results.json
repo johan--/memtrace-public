@@ -17,7 +17,7 @@
       "p95_latency_ms": 10.44,
       "avg_tokens_per_query": 192.0,
       "total_tokens": 192016,
-      "backend": "ArcadeDB (Neo4j-Bolt plugin + HTTP opencypher, v25.04)",
+      "backend": "legacy graph backend",
       "run_date": "2026-04-20"
     },
     "gitnexus": {

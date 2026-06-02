@@ -61,7 +61,7 @@ def measure_competitors():
 
 
     # 3. Memtrace Baseline (From true official benchmark over 1000 items)
-    print("3. MEMTRACE (Native Rust AST-Memgraph Compilation)")
+    print("3. MEMTRACE (Native Rust AST graph compilation)")
     print(f" -> Memtrace Avg Query Latency:  4.6 ms")
     print(f" -> Memtrace Context Load:       283 tokens dragged into the prompt per query.")
     print(f" -> Time for 1000 Queries:       0.07 minutes (4.6 seconds)\n")

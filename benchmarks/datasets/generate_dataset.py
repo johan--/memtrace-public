@@ -1,9 +1,9 @@
 """
-Generate benchmark dataset from the live ArcadeDB graph.
+Generate benchmark dataset from the live graph.
 
 Queries only mempalace symbols so competitors (who only indexed mempalace)
 get a fair shot.  Uses the Neo4j-Bolt plugin wire protocol, so the same
-driver that talks to Memgraph also talks to ArcadeDB — only the auth +
+driver is backend-agnostic — only the auth +
 database name change.
 """
 import json
@@ -11,15 +11,15 @@ import os
 import random
 from neo4j import GraphDatabase
 
-BOLT_URL  = os.environ.get("MEMTRACE_ARCADEDB_BOLT_URL", "bolt://localhost:7687")
-USER      = os.environ.get("MEMTRACE_ARCADEDB_USER",     "root")
-PASS      = os.environ.get("MEMTRACE_ARCADEDB_PASS",     "playwithdata")
-DATABASE  = os.environ.get("MEMTRACE_ARCADEDB_DB",       "memtrace")
+BOLT_URL  = os.environ.get("MEMTRACE_BENCH_BOLT_URL", "bolt://localhost:7687")
+USER      = os.environ.get("MEMTRACE_BENCH_USER",     "root")
+PASS      = os.environ.get("MEMTRACE_BENCH_PASS",     "playwithdata")
+DATABASE  = os.environ.get("MEMTRACE_BENCH_DB",       "memtrace")
 OUT       = "datasets/real_code_dataset.json"
 
 
 def generate_cases():
-    print(f"Connecting to ArcadeDB at {BOLT_URL} (db={DATABASE}) to sample CodeNodes...")
+    print(f"Connecting to the graph at {BOLT_URL} (db={DATABASE}) to sample CodeNodes...")
     driver = GraphDatabase.driver(BOLT_URL, auth=(USER, PASS))
 
     with driver.session(database=DATABASE) as session:

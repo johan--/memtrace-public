@@ -48,7 +48,7 @@ full 1000-query run (~27 minutes total, dominated by CGC's CLI boot time).
 
 | Tool        | Coverage | Acc@1 | Acc@5 | Acc@10 | Avg lat | Tokens |
 |:------------|---------:|------:|------:|-------:|--------:|-------:|
-| **Memtrace** (ArcadeDB) | **100.0%** | **96.7%** | **100.0%** | **100.0%** |  **9.16 ms** |   195 |
+| **Memtrace** (legacy backend) | **100.0%** | **96.7%** | **100.0%** | **100.0%** |  **9.16 ms** |   195 |
 | ChromaDB (all-MiniLM-L6-v2) | 100.0%  | 62.3%  |  86.1%  |  87.9%  |  58.46 ms | 1,937 |
 | GitNexus (eval-server)      |  99.5%  | 27.1%  |  89.7%  |  89.9%  | 191.21 ms |   213 |
 | CodeGrapherContext (CLI)    |  67.2%  |  6.4%  |  66.4%  |  66.7%  | 1627.17 ms |   221 |

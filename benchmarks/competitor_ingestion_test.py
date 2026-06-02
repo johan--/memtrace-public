@@ -73,6 +73,6 @@ if __name__ == "__main__":
     print("\n--- Testing Memtrace AST Ingestion ---")
     print("Memtrace uses Tree-sitter and LSP to securely parse code instantaneously.")
     print("Memtrace CLI `memtrace index` was clocked at:")
-    print("-> 1500 files parsed and indexed into Memgraph via AST.")
+    print("-> 1500 files parsed and indexed into the graph via AST.")
     print("-> Total Time: ~1.2 seconds.")
     print("-> Cost: $0.00 (Zero LLM calls).")

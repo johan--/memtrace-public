@@ -1,5 +1,5 @@
 """
-Memtrace-only benchmark on the ArcadeDB backend.
+Memtrace-only benchmark on the legacy graph backend.
 
 Runs every dataset query through the real MCP binary (find_symbol tool)
 and reports accuracy@1, latency percentiles, and token volume.  Mirrors
@@ -9,7 +9,7 @@ just the Memtrace portion is the fastest way to reproduce the v0.2.0
 numbers after a clean index.
 
 Prerequisites:
-  1. ArcadeDB is up: `memtrace start` (auto-manages Docker)
+  1. Memtrace is up: `memtrace start`
   2. Target codebase is indexed: `memtrace index /path/to/mempalace`
   3. Dataset exists: `.venv/bin/python datasets/generate_dataset.py`
   4. Release binary built: `cargo build --release -p memtrace-mcp`
@@ -30,7 +30,7 @@ MEMTRACE_BIN = os.environ.get(
     "MEMTRACE_BIN",
     os.path.join(os.path.dirname(__file__), "..", "target", "release", "memtrace"),
 )
-OUTPUT       = os.path.join(os.path.dirname(__file__), "bench_memtrace_arcadedb.json")
+OUTPUT       = os.path.join(os.path.dirname(__file__), "bench_memtrace.json")
 MAX_QUERIES  = int(os.environ.get("MAX_QUERIES", "1000"))
 
 
@@ -111,7 +111,7 @@ def main() -> int:
         cases = json.load(f)
 
     n = min(MAX_QUERIES, len(cases))
-    print(f"Running {n} queries against Memtrace (ArcadeDB backend)...")
+    print(f"Running {n} queries against Memtrace (legacy backend)...")
 
     mt = Memtrace()
     results = []
@@ -137,7 +137,7 @@ def main() -> int:
     p95_idx = int(len(latencies) * 0.95)
 
     summary = {
-        "backend": "ArcadeDB (Neo4j-Bolt plugin + HTTP opencypher)",
+        "backend": "legacy graph backend",
         "n_queries": len(results),
         "accuracy_pct": round(acc, 2),
         "avg_latency_ms": round(statistics.mean(latencies), 2),

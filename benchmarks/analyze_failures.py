@@ -6,7 +6,7 @@ def analyze_failures(json_path: str):
     with open(json_path, 'r') as f:
         failures = json.load(f)
         
-    print(f"Analyzing {len(failures)} failed queries against Memgraph...")
+    print(f"Analyzing {len(failures)} failed queries against the graph backend...")
     driver = GraphDatabase.driver("bolt://localhost:7687", auth=("", ""))
     
     collision_counts = []

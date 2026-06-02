@@ -40,7 +40,7 @@ Bench #5 (agent-level SWE completion) has a 5-task dataset and skeleton; the age
 - **Machine:** Apple M3 Max, 14 cores (10P + 4E), 36 GB RAM
 - **OS:** macOS
 - **Memtrace:** Rust release binary (`npm install -g memtrace` or `cargo build --release`)
-- **ArcadeDB:** `arcadedata/arcadedb:latest` Docker container (auto-managed via `memtrace start`)
+- **Graph backend:** legacy backend, auto-managed by `memtrace start` (since removed)
 - **Corpora:**
   - [`mempalace`](https://github.com/mempalace/mempalace) — ~250 Python files (exact-symbol and graph benches)
   - [`django/django`](https://github.com/django/django) — ~3,300 Python files (intent + Django graph generalization)
@@ -198,7 +198,7 @@ Reproduce:
 
 Two critical fixes went into these numbers, disclosed honestly:
 
-1. **Memtrace Cypher anchor fix** (`relationships.rs:108-110` — 2026-04-22) — the inbound traversal from a variable-length `CALLS*1..3` path was anchored at the END node, which ArcadeDB's planner cannot backward-chain. Flipping the anchor to start at the target took Memtrace callers recall from **0.000 → 0.851**.
+1. **Memtrace Cypher anchor fix** (`relationships.rs:108-110` — 2026-04-22) — the inbound traversal from a variable-length `CALLS*1..3` path was anchored at the END node, which the graph planner could not backward-chain. Flipping the anchor to start at the target took Memtrace callers recall from **0.000 → 0.851**.
 
 2. **Fair GitNexus + CGC extractors** — the initial adapters pulled only file paths from the free-text / Rich-table output. Bench #3 scores by symbol NAMES, so path-only extraction scored 0.000 everywhere. Rewrote the GitNexus flow-text parser (`Symbol <name> → <file>` pairs) and the CGC table parser (first `Caller Function` column, `COLUMNS=400` to defeat Rich truncation). This is what revealed CGC's real 0.584 on mempalace callers — previously reported as 0.000 due to the parser bug, not the algorithm.
 

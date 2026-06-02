@@ -34,7 +34,7 @@ commit = "32ec74d8eb79c97e17139999a321667201f372de"
 path_env = "DJANGO_PATH"
 
 [services]
-# Bench #0 only requires ArcadeDB (behind Memtrace). CGC runs in-process —
-# no separate FalkorDB container was spawned during the 2026-04-21 parity run.
-# When Bench #3/#4 land with a dedicated CGC service topology, add FalkorDB here.
-arcadedb = "arcadedata/arcadedb@sha256:153ef190d21cad7f1c63ccc79dec7628ed1ae514b717a5be769568281bae3239"
+# Bench #0 ran entirely behind Memtrace (legacy graph backend, since removed).
+# CGC runs in-process — no separate FalkorDB container was spawned during the
+# 2026-04-21 parity run. When Bench #3/#4 land with a dedicated CGC service
+# topology, add FalkorDB here.

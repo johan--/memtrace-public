@@ -265,7 +265,7 @@ For manual setup:
 ```bash
 claude plugin marketplace add https://github.com/syncable-dev/memtrace-public.git
 claude plugin install memtrace-skills@memtrace --scope user
-claude mcp add memtrace -- memtrace mcp -e MEMTRACE_ARCADEDB_BOLT_URL=bolt://localhost:7687
+claude mcp add memtrace -- memtrace mcp
 ```
 
 ### Cursor
@@ -313,9 +313,7 @@ For Cline, Roo Code, or any client that only needs MCP tools, add this server ma
     "memtrace": {
       "command": "memtrace",
       "args": ["mcp"],
-      "env": {
-        "MEMTRACE_ARCADEDB_BOLT_URL": "bolt://localhost:7687"
-      }
+      "env": {}
     }
   }
 }

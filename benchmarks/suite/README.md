@@ -41,7 +41,7 @@ Output: `benchmarks/suite/results/bench_0/rollup.md` (markdown table +
 primary-axis winner), `rollup.csv` (same data, flat), per-adapter jsonl.
 
 **Memtrace pre-requisite:** `memtrace index /path/to/mempalace` must have
-populated the ArcadeDB graph before Bench #0 is run. Without an indexed
+populated the graph before Bench #0 is run. Without an indexed
 corpus, Memtrace's `find_symbol` returns empty results and the bench
 reports 0% accuracy. The `fair/` harness has this dependency too; it's
 a deployment prerequisite, not a bench bug.

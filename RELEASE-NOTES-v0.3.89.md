@@ -27,7 +27,7 @@ The biggest single-release expansion to date AND the largest community-driven bu
 | **Watch directory registrations** | vanished on MCP disconnect — `list_watched_paths` returned `count: 0` after restart | persist to `~/.memtrace/watches.json`; restored on every MCP boot; each entry tagged `origin: manual` or `origin: restored` |
 | **Agent says "Memtrace index is empty (0 nodes, 0 edges)"** | MCP server with a dual-`.memdb` anchor mismatch returned silently empty — agent abandoned Memtrace and fell back to grep | empty-state responses now carry a `_meta` envelope explaining how the data dir was chosen, the resolved path, and a classified `empty_state_reason` the agent can branch on |
 | **Value ledger ("140 calls / $0.00")** | ledger anchored to per-workspace `data_dir` — `memtrace mcp` (cwd = agent's dir) and `memtrace start` (cwd = repo) wrote to / read from different files | ledger lives at user-global `~/.memtrace/session-ledger.jsonl`; both processes see the same data regardless of cwd |
-| **Legacy `MEMTRACE_ARCADEDB_BOLT_URL`** | every install wired this dead env var into `~/.claude/settings.json` — relic from before the Phase-3 MemDB migration | installer no longer writes it; on upgrade your config gets the new clean shape (`env: {}`) |
+| **A legacy backend env var** | every install wired a dead `*_BOLT_URL` env var into `~/.claude/settings.json` — relic from an earlier backend | installer no longer writes it; on upgrade your config gets the new clean shape (`env: {}`) |
 
 ---
 
@@ -271,9 +271,9 @@ Watches now survive across MCP disconnects via `~/.memtrace/watches.json`. The f
 
 `~/.memtrace/logs/daemon.log` (rotated at 10 MB, max 5 files). The directory is created on first daemon start.
 
-### Legacy `MEMTRACE_ARCADEDB_*` env vars are ignored
+### Legacy backend env vars are ignored
 
-The ArcadeDB backend was removed in Phase 3, but the env-var plumbing was missed in that cleanup — fresh installs were still wiring `MEMTRACE_ARCADEDB_BOLT_URL=bolt://localhost:7687` into `~/.claude/settings.json` (and Cursor's `mcp.json`, etc.). That's gone now. The binary still tolerates the env var being set (so existing configs don't break) but nothing reads it. On next install the installer overwrites the `memtrace` MCP entry's `env` block to the new shape (`env: {}`), so the legacy var disappears naturally. If you want immediate cleanup, just delete the `env` block from your MCP config — Memtrace doesn't need any env vars for the basic case.
+A legacy storage backend was removed in an earlier version, but the env-var plumbing was missed in that cleanup — fresh installs were still wiring a dead `*_BOLT_URL` env var into `~/.claude/settings.json` (and Cursor's `mcp.json`, etc.). That's gone now. The binary still tolerates the env var being set (so existing configs don't break) but nothing reads it. On next install the installer overwrites the `memtrace` MCP entry's `env` block to the new shape (`env: {}`), so the legacy var disappears naturally. If you want immediate cleanup, just delete the `env` block from your MCP config — Memtrace doesn't need any env vars for the basic case.
 
 ## Part 6 — New env vars
 
