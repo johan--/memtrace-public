@@ -146,6 +146,11 @@ That gives the machine a background workspace owner. Later
 `memtrace mcp` processes attach to it instead of opening another
 embedded MemDB.
 
+Working across several related repos (frontend + backend, a monorepo,
+a service mesh)? Index them under one **workspace** so they share a
+single graph and cross-repo questions resolve — see
+[`workspaces.md`](workspaces.md).
+
 ## Tell your agent to use Memtrace
 
 If you installed via npm, the integrations for the major AI tools are
