@@ -24,7 +24,9 @@ the defaults auto-tune to your machine.
 |---|---|---|
 | `MEMTRACE_TRANSPORT` | `stdio` | How `memtrace mcp` talks to its agent. See [`mcp-and-transports.md`](mcp-and-transports.md). Values: `stdio`, `streamable-http`, `sse` (alias for streamable-http), `http` (alias for streamable-http). Anything else is rejected with a clear error since v0.3.32. |
 | `MEMTRACE_PORT` | `3000` | When transport is HTTP, the port `memtrace mcp` binds. |
-| `MEMTRACE_UI_PORT` | `3030` | The local dashboard. Always-on while the daemon is running. |
+| `MEMTRACE_UI_PORT` | `3030` | The local dashboard. Always-on while the daemon is running (unless `MEMTRACE_NO_UI` / `--no-ui`). |
+| `MEMTRACE_NO_UI` | (unset) | Set to `1` to skip the HTTP UI/API server entirely. Alias: `MEMTRACE_HEADLESS`. |
+| `MEMTRACE_NO_BROWSER` | (unset) | Set to `1` to keep the UI server on `MEMTRACE_UI_PORT` but skip auto-opening a browser tab on `memtrace start`. Same as `--no-browser`. |
 | `MEMTRACE_WS_PORT` | `3031` | Internal WebSocket bus that pushes index events to the UI. Don't change unless 3031 is taken. |
 
 ## On-disk locations

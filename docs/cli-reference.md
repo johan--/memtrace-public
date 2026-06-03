@@ -65,6 +65,8 @@ owners for the same workspace.
 | `--clear`, `--fresh` | `start`, `index` | Wipe the resolved local MemDB data directory before connecting. |
 | `--workspace <path>` | `start`, `index`, `mcp` workspace resolution | Treat `path` as a multi-repo workspace root and write a `.memtrace-workspace` marker there. |
 | `--no-workspace` | `start` | Disable the auto-workspace behavior when the current directory looks like a parent folder containing multiple git repos. |
+| `--no-ui`, `--headless` | `start` | Skip the HTTP UI/API server entirely (no bind on `MEMTRACE_UI_PORT`). Use when you truly do not need health, search, or the value ledger. |
+| `--no-browser` | `start` | Keep the HTTP UI/API server on `MEMTRACE_UI_PORT` but do not auto-open a browser tab on startup. Prefer this for Orbit, CI, and headless hosts that still need `:3030`. |
 
 ## Code review
 
@@ -173,6 +175,8 @@ MEMTRACE_UI_PORT=3030
 | Variable | Purpose |
 |---|---|
 | `MEMTRACE_UI_PORT` | Local UI port. Default: `3030`. |
+| `MEMTRACE_NO_UI` | Skip HTTP UI/API server (`1`, `true`, `yes`, or `on`). |
+| `MEMTRACE_NO_BROWSER` | Keep UI server; skip auto-open browser on start. |
 | `MEMTRACE_TRANSPORT` | MCP transport: `stdio`, `streamable-http`, `sse`, or `http`. |
 | `MEMTRACE_PORT` | MCP HTTP port when transport is not stdio. |
 | `MEMTRACE_DATA_DIR` | Job state directory. |
