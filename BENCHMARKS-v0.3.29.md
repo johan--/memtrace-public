@@ -135,7 +135,7 @@ The published v0_3_21 baselines in `results_hybrid_1k_*_v0_3_21.json` were gener
 
 The full spec stack lives in the closed-source repo; the agent-visible diff is:
 
-- **Tantivy fork** (`syncable-dev/tantivy@bm25-b-0.45`) — `B = 0.45` instead of upstream 0.75, calibrated against code-style identifier tokens. Plus the per-field boosts (NAME=5, SIG=3, SCOPE=2, KIND=2, LANG=2, CONTENT=1) tuned via a 6-row Sourcegraph-style sweep.
+- **Tantivy fork** — `B = 0.45` instead of upstream 0.75, calibrated against code-style identifier tokens. Plus the per-field boosts (NAME=5, SIG=3, SCOPE=2, KIND=2, LANG=2, CONTENT=1) tuned via a 6-row Sourcegraph-style sweep.
 - **Custom code tokenizer** — splits camelCase / snake_case / kebab-case at query *and* index time, so `getUserById` matches `user_by_id`. Plus the n-gram subword field for typo recall.
 - **Exact-name STRING field** with a separate boost path so identifier exact matches don't lose to BM25 corpus stats on rare names.
 - **Pseudo-relevance feedback** — when the primary search lands fewer than 3 results, expand the query with the top hit's `name` + `scope_path` and re-issue once. Lifts recall on short / generic queries without hurting precision.

@@ -1,6 +1,6 @@
 {
   "repo": "mempalace",
-  "repo_path": "/Users/alexthh/School/ZeroToDemo/mempalace",
+  "repo_path": "/path/to/mempalace",
   "dataset": "benchmarks/fair/dataset_1k_mempalace.json",
   "n_dataset_rows": 1000,
   "n_query_cases": 3000,

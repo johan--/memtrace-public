@@ -151,9 +151,9 @@ All harness code in [`benchmarks/fair/`](benchmarks/fair/) — `run_fair_benchma
 ```bash
 # Honest HEAD-only memtrace index times
 MEMTRACE_SKIP_EMBED=1 MEMTRACE_NO_REPLAY=1 \
-  memtrace index /Users/alexthh/School/ZeroToDemo/mempalace
+  memtrace index /path/to/mempalace
 MEMTRACE_SKIP_EMBED=1 MEMTRACE_NO_REPLAY=1 \
-  memtrace index /Users/alexthh/School/ZeroToDemo/django
+  memtrace index /path/to/django
 
 # Per-adapter isolated matrix (one process per adapter)
 cd benchmarks/fair

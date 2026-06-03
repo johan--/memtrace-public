@@ -27,7 +27,7 @@ def _default_memtrace_binary() -> Path:
     if which:
         return Path(which)
     # Original benchmark-host layout — internal runs.
-    return Path("/Users/alexthh/Desktop/ZeroToDemo/Memtrace/target/release/memtrace")
+    return Path("/path/to/Memtrace/target/release/memtrace")
 
 
 DEFAULT_BINARY = _default_memtrace_binary()

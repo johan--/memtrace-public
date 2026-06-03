@@ -1,7 +1,7 @@
 {
   "n_queries": 1000,
   "repo": "mempalace",
-  "repo_path": "/Users/alexthh/School/ZeroToDemo/mempalace",
+  "repo_path": "/path/to/mempalace",
   "dataset": "dataset.json",
   "memtrace_backend": "memdb-v0.3.22",
   "tools": {}

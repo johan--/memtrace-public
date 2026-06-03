@@ -43,7 +43,7 @@ Bisected v0.3.55 → HEAD across 86 commits to confirm `release(0.3.62)` as the 
 - `macos + aarch64` → `features = ["std", "ndarray"]` (static)
 - everyone else → `features = ["std", "ndarray", "load-dynamic"]` (dynamic, preserves Corpo's noavx2 path)
 
-**Measured on 36 GB M3 Max indexing Memrack/Memtrace:**
+**Measured on 36 GB M3 Max indexing a multi-repo workspace:**
 
 | | Phase 1 | Phase 2 peak RSS | Compressed | Outcome |
 |---|---|---|---|---|
@@ -68,7 +68,7 @@ Wave-3 added a 0.5×-boosted BM25 field that indexed string literals inside func
 
 ## v0.3.85 — Phase-1 leak fix
 
-Wave-3 added `body_strings: Vec<BodyString>` as a field on `FileParseResult`. The struct is held in a `HashMap<PathBuf, FileParseResult>` for the resolver pass — every parsed file's literal payload sat in memory simultaneously across the whole repo. On Memrack workspace indexing this added ~4 GB to Phase 1 RSS, jetsam-killing the daemon at the 4th repo (helix-db).
+Wave-3 added `body_strings: Vec<BodyString>` as a field on `FileParseResult`. The struct is held in a `HashMap<PathBuf, FileParseResult>` for the resolver pass — every parsed file's literal payload sat in memory simultaneously across the whole repo. On a multi-repo workspace indexing this added ~4 GB to Phase 1 RSS, jetsam-killing the daemon at the 4th repo.
 
 Field removed; inline string-literal extraction was already disabled by the BM25 stamping removal above.
 
@@ -146,4 +146,4 @@ Bypass: `git push --no-verify` OR `MEMTRACE_PREPUSH=off`.
 
 ## Verified end-to-end
 
-Local install (`/Users/alexthh/.npm-global/lib/node_modules/memtrace/...`) replaced; `memtrace --version` reports `0.3.85`. Indexing the Memrack 6-repo workspace (jina-code + 768d, default settings) completes Phase 1 + Phase 2 cleanly with steady-state ~7 GB RSS, zero compression, zero swap pressure.
+Local install (`~/.npm-global/lib/node_modules/memtrace/...`) replaced; `memtrace --version` reports `0.3.85`. Indexing a 6-repo workspace (jina-code + 768d, default settings) completes Phase 1 + Phase 2 cleanly with steady-state ~7 GB RSS, zero compression, zero swap pressure.

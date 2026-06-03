@@ -1,7 +1,7 @@
 {
   "repo": "django",
-  "repo_path": "/Users/alexthh/School/ZeroToDemo/django",
-  "dataset": "/Users/alexthh/School/ZeroToDemo/Memtrace/benchmarks/fair/dataset_1k_django.json",
+  "repo_path": "/path/to/django",
+  "dataset": "/path/to/Memtrace/benchmarks/fair/dataset_1k_django.json",
   "n_dataset_rows": 1000,
   "n_query_cases": 3000,
   "limit": 10,

@@ -26,7 +26,7 @@ usable symbol:
 
 Prerequisites:
   - pyright installed globally: `npm install -g pyright`
-  - mempalace checkout at /Users/alexthh/Desktop/ZeroToDemo/mempalace
+  - mempalace checkout at /path/to/mempalace
 
 If pyright fails to resolve a symbol, we skip it gracefully. Target is
 200 usable triples; we over-sample the symbol pool to absorb skips.

@@ -1,7 +1,7 @@
 {
   "repo": "mempalace",
-  "repo_path": "/Users/alexthh/School/ZeroToDemo/mempalace",
-  "dataset": "/Users/alexthh/School/ZeroToDemo/Memtrace/benchmarks/fair/dataset.json",
+  "repo_path": "/path/to/mempalace",
+  "dataset": "/path/to/Memtrace/benchmarks/fair/dataset.json",
   "n_dataset_rows": 1000,
   "n_query_cases": 3000,
   "limit": 10,

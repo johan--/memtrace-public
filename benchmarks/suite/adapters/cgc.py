@@ -21,7 +21,7 @@ def _default_cgc_binary() -> Path:
     if which:
         return Path(which)
     # Original benchmark-host layout — internal runs.
-    return Path("/Users/alexthh/Desktop/ZeroToDemo/Memtrace/benchmarks/.venv/bin/cgc")
+    return Path("/path/to/Memtrace/benchmarks/.venv/bin/cgc")
 
 
 DEFAULT_BIN = _default_cgc_binary()

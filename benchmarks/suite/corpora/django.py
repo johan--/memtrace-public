@@ -12,7 +12,7 @@ from pathlib import Path
 DEFAULT_DJANGO = Path(
     os.environ.get(
         "DJANGO_PATH",
-        "/Users/alexthh/Desktop/ZeroToDemo/django",
+        "/path/to/django",
     )
 )
 

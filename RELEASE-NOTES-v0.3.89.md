@@ -332,7 +332,7 @@ To **@Magalz**, **@Badmrpotatohead**, and **@Corpo** — sharp repros, concrete 
 
 Field-report shape from real dogfood sessions on a Next.js + Supabase + Drizzle production codebase drove most of the indexing side. The RLS-policy + cross-language edges, the test-fixture column-drift scenario, the "is this in benchmarks or in code?" question — all surfaced from real use, not speculation.
 
-— alexthh
+— the Memtrace team
 
 ## See also
 

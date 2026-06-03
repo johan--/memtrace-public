@@ -56,7 +56,7 @@ Fix: `PageCache::snapshot_resident_for_db()` + rewrite `flush_all` to use `Cache
 
 ### Validation
 
-- **Per-crate**: `memcore-page` 102 tests / 246 cases, `memcore-wal` 84/84, `memcore-hnsw` 119/119, `memcore-grpc` persistence test files: rid_uuid 48 TDD + 12 proptest, edge_adj 41 + 7 + 12, property_idx 40 + 45 + 12, count_store 24 + 6. Combined: ~250 new tests / ~2,500 property cases on the boot-architecture work alone.
+- **Storage/index/persistence layers**: rid_uuid 48 TDD + 12 proptest, edge_adj 41 + 7 + 12, property_idx 40 + 45 + 12, count_store 24 + 6. Combined: ~250 new tests / ~2,500 property cases on the boot-architecture work alone.
 - **Dogfood bench** (copy of a live 220K `.memdb` to `/tmp`): first open 3.572 ms (rebuild path), second open 637 µs (all 5 fast-paths fire). 5.6× speedup; both sub-millisecond on this size. Scaling holds — recovery cost is bounded by manifest replay LSN, not store size.
 
 ### What does NOT change

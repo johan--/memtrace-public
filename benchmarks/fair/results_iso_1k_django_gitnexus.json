@@ -1,7 +1,7 @@
 {
   "n_queries": 1000,
   "repo": "django",
-  "repo_path": "/Users/alexthh/School/ZeroToDemo/django",
+  "repo_path": "/path/to/django",
   "dataset": "dataset_1k_django.json",
   "memtrace_backend": "memdb-v0.3.22",
   "tools": {

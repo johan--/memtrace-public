@@ -18,7 +18,7 @@ from pathlib import Path
 from benchmarks.suite.datasets.generators.pyright_graph import generate
 
 
-DJANGO_PATH = Path("/Users/alexthh/Desktop/ZeroToDemo/django")
+DJANGO_PATH = Path("/path/to/django")
 
 
 def main() -> None:

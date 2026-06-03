@@ -13,7 +13,7 @@ from pathlib import Path
 DEFAULT_MEMPALACE = Path(
     os.environ.get(
         "MEMPALACE_PATH",
-        "/Users/alexthh/Desktop/ZeroToDemo/mempalace",
+        "/path/to/mempalace",
     )
 )
 

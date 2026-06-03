@@ -34,7 +34,7 @@ def measure_competitors():
     gn_tokens = 0
     print(f"Testing {len(gn_queries)} sample queries...")
     for q in gn_queries:
-        out, lat = run_cmd(["npx", "-y", "gitnexus", "query", q], cwd="/Users/alexthh/Desktop/ZeroToDemo/mempalace")
+        out, lat = run_cmd(["npx", "-y", "gitnexus", "query", q], cwd="/path/to/mempalace")
         gn_time += lat
         # Approximation of tokens sent back to LLM context
         gn_tokens += len(out) // 4
@@ -50,7 +50,7 @@ def measure_competitors():
     cgc_tokens = 0
     print(f"Testing {len(cgc_queries)} sample queries...")
     for q in cgc_queries:
-        out, lat = run_cmd(["/Users/alexthh/Desktop/ZeroToDemo/Memtrace/benchmarks/.venv/bin/cgc", "find", "name", q], cwd="/Users/alexthh/Desktop/ZeroToDemo/mempalace")
+        out, lat = run_cmd(["/path/to/Memtrace/benchmarks/.venv/bin/cgc", "find", "name", q], cwd="/path/to/mempalace")
         cgc_time += lat
         cgc_tokens += len(out) // 4
         

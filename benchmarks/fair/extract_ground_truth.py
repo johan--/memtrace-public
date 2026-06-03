@@ -15,7 +15,7 @@ import random
 import sys
 from pathlib import Path
 
-REPO_ROOT     = Path("/Users/alexthh/Desktop/ZeroToDemo/mempalace")
+REPO_ROOT     = Path("/path/to/mempalace")
 REPO_PARENT   = REPO_ROOT.parent          # so paths are "mempalace/..."
 OUT_CORPUS    = Path(__file__).parent / "corpus.json"
 OUT_DATASET   = Path(__file__).parent / "dataset.json"

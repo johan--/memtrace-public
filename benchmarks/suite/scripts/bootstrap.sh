@@ -49,7 +49,7 @@ fi
 echo "  found: $MT_BIN"
 
 echo "→ Checking mempalace checkout"
-MP="${MEMPALACE_PATH:-/Users/alexthh/Desktop/ZeroToDemo/mempalace}"
+MP="${MEMPALACE_PATH:-/path/to/mempalace}"
 if [ ! -d "$MP" ]; then
   echo "  mempalace corpus not found at $MP"
   echo "    export MEMPALACE_PATH=/path/to/mempalace"

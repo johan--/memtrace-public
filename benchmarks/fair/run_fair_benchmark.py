@@ -56,8 +56,8 @@ from urllib import request, error
 HERE          = Path(__file__).parent
 DATASET_FILE  = HERE / "dataset.json"
 RESULTS_FILE  = HERE / "results.json"
-MEMTRACE_BIN  = "/Users/alexthh/Desktop/ZeroToDemo/Memtrace/target/release/memtrace"
-MEMPALACE     = Path("/Users/alexthh/Desktop/ZeroToDemo/mempalace")
+MEMTRACE_BIN  = "/path/to/Memtrace/target/release/memtrace"
+MEMPALACE     = Path("/path/to/mempalace")
 MEMPALACE_PARENT = MEMPALACE.parent
 CGC_BIN       = str(HERE.parent / ".venv/bin/cgc")
 GN_URL        = "http://localhost:4848/tool/query"
