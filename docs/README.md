@@ -34,6 +34,7 @@ look up later":
 | [`code-reviewer.md`](code-reviewer.md) | How to use Memtrace as a GitHub PR reviewer from the CLI or an agent: feature branch, PR, posted review, watched commands, and optional local fixes. |
 | [`cli-reference.md`](cli-reference.md) | Current `memtrace --help` command surface: start/status/index/MCP, code review, PR watches, embedding provider commands, flags, and key env vars. |
 | [`architecture.md`](architecture.md) | High-level picture of the components — daemon, MCP server, MemDB, indexer, embedding pipeline. No deep internals; just enough to reason about behaviour. |
+| [`workspaces.md`](workspaces.md) | Share one knowledge graph across multiple repos: when to use a workspace, the `.memtrace-workspace` marker, resolution order, cross-repo edges, and the `--workspace` flag. |
 | [`data-directories.md`](data-directories.md) | Every directory Memtrace creates: `.memdb/`, `.memtrace/`, `~/.memtrace/embed-cache/`, model caches. What's in each, where it lives, when to delete it. |
 | [`embedding-providers.md`](embedding-providers.md) | Local presets, remote/BYO embedding providers (OpenAI, Voyage, Ollama, Infinity, TEI, …), Matryoshka dim truncation, the `memtrace embed` CLI. |
 | [`environment-variables.md`](environment-variables.md) | The full env var reference — transport, ports, model selection, RAM tuning, embedding caps. |

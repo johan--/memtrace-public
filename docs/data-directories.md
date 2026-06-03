@@ -54,6 +54,10 @@ The MemDB graph engine's on-disk store. Created the first time you run
    marker is found, Memtrace uses the nearest git repo root.
 3. **Current working directory** if neither marker nor git root is found.
 
+For the full story on multi-repo setups — why to use a workspace,
+cross-repo edges, and the `--workspace` flag — see
+[`workspaces.md`](workspaces.md). This page covers the storage side.
+
 Quick way to confirm where YOUR `.memdb` is on a running system:
 
 ```

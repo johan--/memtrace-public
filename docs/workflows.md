@@ -243,6 +243,10 @@ Encore, Flask, …) and the call sites that hit them, including from
 *other indexed repos*. The diagram is Mermaid-ready — paste it into
 your docs.
 
+For this to work the repos must share one knowledge graph — index
+them under a single **workspace**. See [`workspaces.md`](workspaces.md)
+for the `.memtrace-workspace` marker and the `--workspace` flag.
+
 ## "How am I doing on token cost?"
 
 Memtrace estimates how many tokens it saved you by answering
