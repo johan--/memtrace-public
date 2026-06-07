@@ -134,17 +134,22 @@ tools will have little or no project context until you run
 `memtrace index .`, run `memtrace start` and let auto-index finish,
 or ask an MCP-enabled agent to call `index_directory`.
 
-If you want Memtrace available without an open terminal, use the
-daemon service commands where supported:
+If you want Memtrace available without an open browser tab (Orbit,
+CI, headless servers), start the workspace runtime in headless mode:
 
 ```bash
-memtrace daemon install
-memtrace daemon start
+memtrace start --headless
+# or: MEMTRACE_HEADLESS=1 memtrace start
 ```
 
-That gives the machine a background workspace owner. Later
-`memtrace mcp` processes attach to it instead of opening another
-embedded MemDB.
+The HTTP API stays on `http://localhost:3030`; only the browser
+auto-open is skipped. For a long-lived background owner without a
+visible terminal, run `memtrace start --headless` inside tmux,
+screen, or your process supervisor of choice.
+
+> **Note (0.6.10):** `memtrace service` / `memtrace daemon install`
+> was removed. Most agent workflows only need `memtrace mcp`, which
+> attaches to an existing owner or becomes the owner for that session.
 
 Working across several related repos (frontend + backend, a monorepo,
 a service mesh)? Index them under one **workspace** so they share a
@@ -208,7 +213,7 @@ After your first index:
 ## Stopping and resetting
 
 ```bash
-memtrace stop                  # stop the running daemon
+memtrace stop                  # stop the running workspace runtime
 memtrace reset                 # wipe the local MemDB (ALL repos)
 memtrace reset <repoId>        # wipe one repo's data only
 memtrace start --clear         # wipe and re-index in one go

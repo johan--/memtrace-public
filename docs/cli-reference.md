@@ -18,11 +18,10 @@ memtrace --help
 | Command | Purpose |
 |---|---|
 | `memtrace start` | Start the local UI/API server, file watcher, PR command loop, and workspace owner against MemDB. This is also the default command when you run `memtrace` with no subcommand. |
-| `memtrace stop` | Stop the running Memtrace daemon. |
+| `memtrace stop` | Stop the running `memtrace start` workspace runtime (and unload any legacy OS service registrations from older installs). |
 | `memtrace status` | Show backend, index, and runtime status. |
 | `memtrace mcp` | Run the MCP server for Claude, Cursor, Codex, and other MCP-compatible agents. It attaches to an existing workspace owner or becomes the owner if none is running. |
 | `memtrace index <path>` | Index a repository or workspace into MemDB, then exit. |
-| `memtrace daemon install/start/status/stop` | Install or control the optional background service where supported. |
 | `memtrace code-review setup` | Choose the default headless agent for `@memtrace fix this`. |
 | `memtrace code-review --pr <url>` | Review a GitHub pull request using local Memtrace context. |
 | `memtrace pr status` | Show local PR watches registered by `memtrace code-review --post --watch`. |
@@ -65,8 +64,10 @@ owners for the same workspace.
 | `--clear`, `--fresh` | `start`, `index` | Wipe the resolved local MemDB data directory before connecting. |
 | `--workspace <path>` | `start`, `index`, `mcp` workspace resolution | Treat `path` as a multi-repo workspace root and write a `.memtrace-workspace` marker there. |
 | `--no-workspace` | `start` | Disable the auto-workspace behavior when the current directory looks like a parent folder containing multiple git repos. |
-| `--no-ui`, `--headless` | `start` | Skip the HTTP UI/API server entirely (no bind on `MEMTRACE_UI_PORT`). Use when you truly do not need health, search, or the value ledger. |
-| `--no-browser` | `start` | Keep the HTTP UI/API server on `MEMTRACE_UI_PORT` but do not auto-open a browser tab on startup. Prefer this for Orbit, CI, and headless hosts that still need `:3030`. |
+| `--headless` | `start` | Keep the HTTP API on `MEMTRACE_UI_PORT` (default `3030`) but do not auto-open a browser tab. Use for Orbit, CI, and agent hosts. |
+| `--no-ui`, `--no-browser` | `start` | **Deprecated aliases** for `--headless` (one-time note on first use). Prefer `--headless` or `MEMTRACE_HEADLESS=1`. |
+
+> **Removed in 0.6.10:** `memtrace service` / `memtrace daemon` (OS login autostart install) was removed. Use `memtrace start` (optionally `--headless`) or `memtrace mcp`. `memtrace stop` still tears down legacy launchd/systemd/Windows service registrations if an older install left them behind.
 
 ## Code review
 
@@ -174,9 +175,10 @@ MEMTRACE_UI_PORT=3030
 
 | Variable | Purpose |
 |---|---|
-| `MEMTRACE_UI_PORT` | Local UI port. Default: `3030`. |
-| `MEMTRACE_NO_UI` | Skip HTTP UI/API server (`1`, `true`, `yes`, or `on`). |
-| `MEMTRACE_NO_BROWSER` | Keep UI server; skip auto-open browser on start. |
+| `MEMTRACE_UI_PORT` | Local HTTP API + dashboard port. Default: `3030`. |
+| `MEMTRACE_UI_HOST` | Bind address for the HTTP API. Default: `127.0.0.1`. Set only when you intentionally need remote/VM/container exposure. |
+| `MEMTRACE_HEADLESS` | Skip browser auto-open on `memtrace start` (`1`, `true`, `yes`, or `on`). API stays up. |
+| `MEMTRACE_NO_UI`, `MEMTRACE_NO_BROWSER` | Deprecated aliases for `MEMTRACE_HEADLESS`. |
 | `MEMTRACE_TRANSPORT` | MCP transport: `stdio`, `streamable-http`, `sse`, or `http`. |
 | `MEMTRACE_PORT` | MCP HTTP port when transport is not stdio. |
 | `MEMTRACE_DATA_DIR` | Job state directory. |
@@ -185,7 +187,8 @@ MEMTRACE_UI_PORT=3030
 | `MEMTRACE_MEMDB_ENDPOINT` | Remote-mode MemDB gRPC endpoint. |
 | `MEMTRACE_EMBED_MODEL` | Local embedding preset when using local embeddings. |
 | `MEMTRACE_VECTOR_DIMS` | Explicit vector dimension override. Prefer `memtrace embed set` for normal use. |
-| `MEMTRACE_SKIP_EMBED` | Skip embedding work. Structural graph remains usable. |
+| `MEMTRACE_SKIP_EMBED` | Skip all embedding (index, watcher, search). Structural graph remains usable. |
+| `MEMTRACE_SKIP_WATCHER_EMBED` | Skip per-save watcher embedding only; keep index-time embed. |
 | `MEMTRACE_NO_REPLAY` | Skip git-history replay. HEAD graph remains usable. |
 | `MEMTRACE_OWNER_ATTACH` | Set to `0` to force legacy direct embedded open for debugging. |
 | `MEMTRACE_START_PHASE2` | Set to `foreground` to run embedding/replay in the foreground instead of background phase 2. |

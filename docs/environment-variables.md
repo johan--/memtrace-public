@@ -14,7 +14,8 @@ the defaults auto-tune to your machine.
 - [Resource caps](#resource-caps)
 - [Install / uninstall lifecycle (v0.3.89)](#install--uninstall-lifecycle-v0389)
 - [Watch persistence (v0.3.89)](#watch-persistence-v0389)
-- [Daemon lifecycle (v0.3.89)](#daemon-lifecycle-v0389)
+- [Headless / browser (v0.6.10)](#headless--browser-v0610)
+- [Legacy daemon lifecycle (removed v0.6.10)](#legacy-daemon-lifecycle-removed-v0610)
 - [MemDB connection (advanced)](#memdb-connection-advanced)
 - [Telemetry + auth](#telemetry--auth)
 
@@ -24,9 +25,11 @@ the defaults auto-tune to your machine.
 |---|---|---|
 | `MEMTRACE_TRANSPORT` | `stdio` | How `memtrace mcp` talks to its agent. See [`mcp-and-transports.md`](mcp-and-transports.md). Values: `stdio`, `streamable-http`, `sse` (alias for streamable-http), `http` (alias for streamable-http). Anything else is rejected with a clear error since v0.3.32. |
 | `MEMTRACE_PORT` | `3000` | When transport is HTTP, the port `memtrace mcp` binds. |
-| `MEMTRACE_UI_PORT` | `3030` | The local dashboard. Always-on while the daemon is running (unless `MEMTRACE_NO_UI` / `--no-ui`). |
-| `MEMTRACE_NO_UI` | (unset) | Set to `1` to skip the HTTP UI/API server entirely. Alias: `MEMTRACE_HEADLESS`. |
-| `MEMTRACE_NO_BROWSER` | (unset) | Set to `1` to keep the UI server on `MEMTRACE_UI_PORT` but skip auto-opening a browser tab on `memtrace start`. Same as `--no-browser`. |
+| `MEMTRACE_UI_PORT` | `3030` | Local HTTP API + dashboard port while `memtrace start` (or an attached owner) is running. |
+| `MEMTRACE_UI_HOST` | `127.0.0.1` | Bind address for the HTTP API. Set to `0.0.0.0` only when you intentionally need remote/VM/container exposure. |
+| `MEMTRACE_HEADLESS` | (unset) | Set to `1` to skip auto-opening a browser tab on `memtrace start`. The API stays bound on `MEMTRACE_UI_PORT`. Same as `--headless`. |
+| `MEMTRACE_NO_UI` | (unset) | **Deprecated alias** for `MEMTRACE_HEADLESS` (skips browser only — does not disable the HTTP API). |
+| `MEMTRACE_NO_BROWSER` | (unset) | **Deprecated alias** for `MEMTRACE_HEADLESS`. Prefer `MEMTRACE_HEADLESS=1` or `memtrace start --headless`. |
 | `MEMTRACE_WS_PORT` | `3031` | Internal WebSocket bus that pushes index events to the UI. Don't change unless 3031 is taken. |
 
 ## On-disk locations
@@ -68,6 +71,8 @@ the defaults auto-tune to your machine.
 | `MEMTRACE_FIELD_BOOST_BODY_STRINGS` | `0.5` | **(v0.3.82)** BM25 weight on the new `body_strings` field (function-body string literals extracted at index time). Improves recall on natural-language → log-line queries. |
 | `MEMTRACE_DISABLE_COREML` | (unset) | Set to `1` on Apple Silicon to force CPU execution provider instead of CoreML / ANE. Useful if CoreML's first-run graph compile hangs on your machine. |
 | `MEMTRACE_TIER` | auto-detected (`light` / `standard` / `heavy`) | Force the host tier instead of letting Memtrace pick from RAM + CPU + accelerator signals. |
+| `MEMTRACE_SKIP_EMBED` | (unset) | Set to `1` to disable **all** embedding (index, watcher, semantic search). Structural graph tools still work. |
+| `MEMTRACE_SKIP_WATCHER_EMBED` | (unset) | Set to `1` to disable per-save watcher embedding only; index-time embedding still runs. |
 
 ## Reranker
 
@@ -126,7 +131,7 @@ Branch switch (`git checkout other-branch`) re-targets the watcher to the new ac
 |---|---|---|
 | `MEMTRACE_HOOK_MODE` | `advisory` | Set to `off` for unconditional no-op of the UserPromptSubmit hook. |
 | `MEMTRACE_HOOK_DEBOUNCE_SECS` | `120` | Per-session debounce window. After the hook fires once for a session, suppresses further fires within this window. Set to `0` to disable debounce (every message fires). |
-| `MEMTRACE_HEALTH_URL` | `http://localhost:3030/health` | Where the hook probes daemon liveness. Override for non-default UI ports. |
+| `MEMTRACE_HEALTH_URL` | `http://localhost:3030/api/health` | Where the Claude Code `UserPromptSubmit` hook probes runtime liveness. Override for non-default UI ports. |
 
 Session ID resolution (used to key the lock file at `~/.memtrace/hook-debounce/<session_id>.lock`):
 1. `CLAUDE_SESSION_ID` env (if Claude Code sets it)
@@ -159,16 +164,23 @@ After @Magalz's report that `watch_directory` registrations vanished on MCP disc
 
 The watch file is a JSON array of `{ path, repo_id, registered_at, origin }` objects; `origin` is `"manual"` for entries you registered explicitly via `watch_directory` and `"restored"` for entries that were re-armed from a prior session.
 
-## Daemon lifecycle (v0.3.89)
+## Headless / browser (v0.6.10)
 
-After @Magalz's report that `memtrace daemon start` was reporting "started" while the daemon silently exited 2-3 s later on Windows, the launcher now health-checks before declaring success.
+`memtrace start --headless` (or `MEMTRACE_HEADLESS=1`) keeps the HTTP API on `:3030` but skips auto-opening a browser tab. This is the recommended mode for Orbit, CI, and agent hosts that need health/search endpoints without a GUI session.
 
-| Var | Default | Purpose |
-|---|---|---|
-| `MEMTRACE_DAEMON_HEALTH_TIMEOUT_MS` | `10000` | How long `memtrace daemon start` polls `/api/health` before giving up and printing the "did not bind within Ns" warning. Increase on slow / cold-cache Windows hosts. |
-| `MEMTRACE_DAEMON_HEALTH_INTERVAL_MS` | `500` | Polling interval. |
+Legacy names `--no-ui`, `--no-browser`, `MEMTRACE_NO_UI`, and `MEMTRACE_NO_BROWSER` still work as aliases and print a one-time deprecation note.
 
-The daemon now also writes `~/.memtrace/logs/daemon.log` (rotated at 10 MB, max 5 files) from its first startup tick, so even an "exits immediately" failure leaves a breadcrumb. Run `memtrace daemon start --foreground` (alias `--verbose`) to skip the detach and see stderr directly in your shell.
+## Legacy daemon lifecycle (removed v0.6.10)
+
+`memtrace service` / `memtrace daemon install|start|status|stop` was removed in **0.6.10**. Use `memtrace start` (foreground or `--headless` in tmux/screen/nohup) or `memtrace mcp` for agent workflows. `memtrace stop` still unloads legacy launchd/systemd/Windows service registrations if an older install left them behind.
+
+The following env vars are **obsolete** and ignored by current binaries:
+
+| Var | Was used for |
+|---|---|
+| `MEMTRACE_DAEMON_HEALTH_TIMEOUT_MS` | `memtrace daemon start` health poll (removed) |
+| `MEMTRACE_DAEMON_HEALTH_INTERVAL_MS` | `memtrace daemon start` health poll interval (removed) |
+| `MEMTRACE_LOGS_DIR` | Override for `~/.memtrace/logs/daemon.log` (file logging removed with OS service install) |
 
 ## MemDB connection (advanced)
 

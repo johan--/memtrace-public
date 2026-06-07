@@ -28,7 +28,7 @@ For a regulated environment, the recommendation is: keep product telemetry enabl
 ```
 Customer machine                                 Memtrace infrastructure
 ┌──────────────────────────┐                     ┌──────────────────────────┐
-│  memtrace daemon         │                     │                          │
+│  memtrace start runtime  │                     │                          │
 │  ┌────────────────────┐  │   HTTPS (TLS 1.3)   │  api.memtrace.io         │
 │  │ AST parser         │  │ ──────────────────▶ │  /api/device/auth        │
 │  │ MemDB (local)      │  │   License + heart-  │  /api/device/heartbeat   │

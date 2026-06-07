@@ -171,7 +171,7 @@ memtrace start
 ```
 
 For multi-tenant (orchestrator) deployments, bind streamable-HTTP
-and let many agents share one daemon — see
+and let many agents share one workspace runtime — see
 [`mcp-and-transports.md`](mcp-and-transports.md).
 
 ### "Indexing Django takes 14s — I want it faster"

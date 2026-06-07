@@ -107,13 +107,17 @@ On a fresh repo, run `memtrace index .`, run `memtrace start` and let
 auto-index finish, or let an MCP-enabled agent call `index_directory`
 before expecting graph-backed answers.
 
-### Headless service mode
+### Headless / background runtime
 
-When you want Memtrace to stay available without an open terminal, use
-the daemon service commands (`memtrace daemon install`, then
-`memtrace daemon start`) where supported. That gives the machine a
-background workspace owner. Later `memtrace mcp` processes attach to
-it instead of opening their own embedded MemDB.
+`memtrace start --headless` (or `MEMTRACE_HEADLESS=1`) keeps the HTTP
+API on `:3030` without auto-opening a browser tab. For a persistent
+owner without a visible terminal, run that command under tmux, screen,
+or your own supervisor.
+
+OS login autostart (`memtrace service install` / `memtrace daemon`)
+was removed in **0.6.10**. Agent-only workflows can rely on
+`memtrace mcp`, which attaches to an existing owner or becomes the
+owner for that session.
 
 ## How duplicate owners are avoided
 

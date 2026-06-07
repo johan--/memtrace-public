@@ -6,7 +6,8 @@ find your symptom, follow the fix.
 ## Quick index
 
 - [Install fails](#install-fails)
-- [Daemon won't start](#daemon-wont-start)
+- [Runtime won't start](#runtime-wont-start)
+- [Claude Code hook JSON validation failed](#claude-code-hook-json-validation-failed)
 - [Agent says "Memtrace index is empty"](#agent-says-memtrace-index-is-empty-0-nodes-0-edges-at-session-start)
 - [Agent isn't using the MCP](#agent-isnt-using-the-mcp)
 - [`MEMTRACE_TRANSPORT=sse` hangs](#memtrace_transportsse-hangs)
@@ -18,7 +19,7 @@ find your symptom, follow the fix.
 - [Stale records / orphan symbols after deletes](#stale-records--orphan-symbols-after-deletes)
 - [Vector dim mismatch error](#vector-dim-mismatch-error)
 - [Windows-specific issues](#windows-specific-issues)
-- [Daemon won't shut down cleanly](#daemon-wont-shut-down-cleanly)
+- [Runtime won't shut down cleanly](#runtime-wont-shut-down-cleanly)
 - [Multiple `memtrace` processes accumulating RAM / CPU](#multiple-memtrace-processes-accumulating-ram--cpu)
 
 ## Install fails
@@ -59,7 +60,7 @@ npm install -g memtrace --include=optional
 If that also fails, check whether your firewall blocks
 `registry.npmjs.org`.
 
-## Daemon won't start
+## Runtime won't start
 
 ### "Address already in use" on port 3030 (UI) or 3000 (MCP)
 
@@ -146,7 +147,7 @@ export MEMTRACE_ORT_DYLIB_PATH=/path/to/libonnxruntime.dylib
 memtrace start
 ```
 
-### Daemon starts but exits immediately
+### `memtrace start` exits immediately
 
 Check the stderr — usually it's printing the actual reason. If it's
 silent, run with verbose logging:
@@ -237,8 +238,8 @@ Most MCP clients only load servers at startup. After `memtrace install`,
 
 `memtrace mcp` can run without a separate `memtrace start`; if no
 owner exists, it becomes the owner for that agent session. If
-`memtrace start` or a headless daemon is already running, `memtrace
-mcp` attaches to it.
+`memtrace start` (including `memtrace start --headless`) is already
+running, `memtrace mcp` attaches to it.
 
 If the agent reports connection errors or empty state, check what
 Memtrace thinks is active:
@@ -592,10 +593,36 @@ memtrace start
 and accept the firewall prompt this time. Or run inside WSL where
 firewalls don't intervene for localhost binds.
 
-## Daemon won't shut down cleanly
+## Claude Code hook JSON validation failed
 
-`memtrace stop` should kill the daemon and free its ports. If it
-hangs or returns "no daemon running" while one's still listening:
+Symptom: every prompt shows
+
+```text
+UserPromptSubmit hook error
+Hook JSON output validation failed — (root): Invalid input
+```
+
+**Cause:** Memtrace **0.6.0** shipped a `UserPromptSubmit` hook that
+emitted the old flat JSON shape (`decision: "continue"` +
+top-level `additionalContext`). Current Claude Code requires the
+`hookSpecificOutput` envelope.
+
+**Fix:** upgrade and refresh hooks:
+
+```bash
+npm install -g memtrace@latest
+memtrace install
+```
+
+You need **0.6.10** or later. Restart Claude Code after upgrading.
+
+## Runtime won't shut down cleanly
+
+`memtrace stop` should stop the workspace runtime and free its ports.
+It also unloads legacy OS service registrations (`launchd` /
+`systemd` / Windows Service) from installs that used the removed
+`memtrace daemon install` command. If it hangs or returns "no daemon
+running" while a process is still listening:
 
 ```bash
 # Find any memtrace process

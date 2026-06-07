@@ -46,6 +46,8 @@ look up later":
 | [`privacy-and-telemetry.md`](privacy-and-telemetry.md) | What stays on your machine, what's optionally sent to us, how to turn telemetry off. |
 | [`v0.4.60-release-notes.md`](v0.4.60-release-notes.md) | The memory-footprint round: −15% RSS, 35× tighter variance, −41% binary, no behaviour change. Two new env knobs (`MEMTRACE_UNIFIED_CACHE_MB`, `MEMTRACE_ORT_LOW_RSS`); both have sensible defaults. |
 
+**0.6.10 highlights** (see also [`cli-reference.md`](cli-reference.md) and [`environment-variables.md`](environment-variables.md)): fixes for GitHub issues #7–#17 (Claude Code hook JSON, graph/stats/temporal accuracy), unified `--headless` / `MEMTRACE_HEADLESS`, and removal of `memtrace service` / OS login autostart.
+
 ## The 90-second tour
 
 ```bash

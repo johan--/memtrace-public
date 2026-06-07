@@ -22,7 +22,7 @@ when (if ever) to delete it.
    ├── auth/                ← session tokens (one file)
    ├── config.toml          ← persistent embedder choice — see embedding-providers.md
    ├── last_health.json     ← last `memtrace embed test` probe result
-   ├── logs/                ← daemon.log + rotated history (v0.3.89)
+   ├── logs/                ← legacy daemon.log from pre-0.6.10 OS service installs (if any)
    ├── session-ledger.jsonl ← user-global MCP tool-call ledger (v0.3.89)
    ├── watches.json         ← persistent watch_directory registrations (v0.3.89)
    └── telemetry/           ← buffered events (only if telemetry is ON)
@@ -263,25 +263,17 @@ crashes (useful for your own debugging), but the flusher never
 ships it. If you've never run `memtrace start`, the directory
 doesn't exist yet.
 
-## `~/.memtrace/logs/daemon.log` (v0.3.89)
+## `~/.memtrace/logs/` (legacy)
 
-Daemon startup + error log. Rolling file appender:
+Versions before **0.6.10** that used `memtrace daemon install` may
+have left rolling logs here (`daemon.log` + dated rotations). Current
+binaries do not write this file — runtime diagnostics go to stderr;
+use `RUST_LOG=info memtrace start` or `MEMTRACE_DEBUG=1` when
+debugging startup failures.
 
-```
-~/.memtrace/logs/
-├── daemon.log         # current
-├── daemon.2026-05-10.log
-├── daemon.2026-05-09.log
-└── …                  # up to 5 files retained, rotated at 10 MB each
-```
-
-Populated from the first daemon-startup tick, so even an
-"exits-immediately" failure leaves a breadcrumb. Created on first
-`memtrace daemon start` after upgrading to v0.3.89.
-
-Override the location with `MEMTRACE_LOGS_DIR=<absolute path>` if
-you want logs somewhere else. Safe to delete the directory at any
-time — it'll be recreated on the next daemon start.
+Safe to delete the directory at any time. It is not recreated unless
+you still have a legacy OS service registration from an older install
+(in which case `memtrace stop` unloads it).
 
 ## `~/.memtrace/session-ledger.jsonl` (v0.3.89)
 

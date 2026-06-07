@@ -231,9 +231,10 @@ your AI tool's MCP setup guide for the current shape.
 
 ### Operational notes
 
-- **Bind address is `0.0.0.0` by default.** If you need to restrict
-  to localhost only, run Memtrace inside a container or reverse-proxy
-  it. There's no built-in `bind=127.0.0.1` flag yet.
+- **HTTP API binds `127.0.0.1` by default** (since 0.6.0). Set
+  `MEMTRACE_UI_HOST=0.0.0.0` only when you intentionally need
+  remote/VM/container exposure. MCP HTTP transport (`MEMTRACE_PORT`)
+  bind behaviour is separate — see your orchestrator setup.
 - **Port collisions.** If `MEMTRACE_PORT` is already in use, you'll
   get a clear error pointing at the env var. Pick a free port.
 - **Auth.** The HTTP transport doesn't enforce auth at the MCP layer —
