@@ -180,9 +180,10 @@ flurry of `Read`/`Grep`/`Glob` calls instead, the MCP isn't wired —
 
 ```bash
 memtrace status
+memtrace doctor
 ```
 
-Prints something like:
+`status` prints the active runtime/index state:
 
 ```
   ◆  Memtrace v0.3.32
@@ -194,6 +195,22 @@ Prints something like:
 
 If the file/symbol counts are zero on a non-empty repo, indexing
 silently failed somewhere — the troubleshooting doc has a checklist.
+
+`doctor` checks whether the local runtime and agent integration are
+ready: duplicate processes, stale runtime state, supported-agent skill
+directories, and MCP registration. If it reports stale runtime state,
+repair it:
+
+```bash
+memtrace doctor --fix
+```
+
+If your agent cannot see `mcp__memtrace__*` tools, repair the local
+skills/MCP config too:
+
+```bash
+memtrace doctor --fix --repair-install
+```
 
 ## What gets created on disk
 

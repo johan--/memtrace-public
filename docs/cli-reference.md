@@ -20,6 +20,7 @@ memtrace --help
 | `memtrace start` | Start the local UI/API server, file watcher, PR command loop, and workspace owner against MemDB. This is also the default command when you run `memtrace` with no subcommand. |
 | `memtrace stop` | Stop the running `memtrace start` workspace runtime (and unload any legacy OS service registrations from older installs). |
 | `memtrace status` | Show backend, index, and runtime status. |
+| `memtrace doctor [--fix] [--repair-install] [--purge-legacy]` | Diagnose runtime, stale locks, process conflicts, agent skills, and MCP registration. With flags, clean stale runtime state and reinstall local skills/MCP config. |
 | `memtrace mcp` | Run the MCP server for Claude, Cursor, Codex, and other MCP-compatible agents. It attaches to an existing workspace owner or becomes the owner if none is running. |
 | `memtrace index <path>` | Index a repository or workspace into MemDB, then exit. |
 | `memtrace code-review setup` | Choose the default headless agent for `@memtrace fix this`. |
@@ -56,6 +57,41 @@ same local `.memdb` store, but they have different lifetimes:
 Memtrace keeps an owner lock in the resolved `.memdb` directory, so
 multiple agent sessions should not open duplicate embedded MemDB
 owners for the same workspace.
+
+## Doctor and repair
+
+Use `memtrace doctor` when Memtrace feels half-installed, the UI/API is
+stuck, MCP tools are missing from your agent, or a previous run left
+stale runtime state behind.
+
+```bash
+memtrace doctor
+memtrace doctor --fix
+memtrace doctor --fix --repair-install
+memtrace doctor --fix --purge-legacy
+```
+
+Plain `doctor` is read-only. It reports:
+
+- running `memtrace` processes and listeners on the UI port
+- stale or invalid `.memdb/daemon.pid` and `daemon-state.json`
+- stale `~/.memtrace/runtime.json`
+- legacy launchd/systemd/Windows service artifacts from older installs
+- supported agent setup: skills count, MCP registration, and config path
+
+`--fix` stops stale supervisors, frees the UI port, and removes stale
+PID/state artifacts. `--repair-install` reruns the local skills/MCP
+installer:
+
+```bash
+npx -y memtrace-skills@latest install --local
+```
+
+Use `--fix --repair-install` when agents cannot see
+`mcp__memtrace__*` tools or `doctor` reports that no supported agent
+has both Memtrace skills and MCP registered. Use `--purge-legacy` only
+when `doctor` reports old OS-service artifacts that can respawn a stale
+owner.
 
 ## Global flags
 

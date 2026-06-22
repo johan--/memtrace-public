@@ -7,9 +7,11 @@ find your symptom, follow the fix.
 
 - [Install fails](#install-fails)
 - [Runtime won't start](#runtime-wont-start)
+- [Run doctor first](#run-doctor-first)
 - [Claude Code hook JSON validation failed](#claude-code-hook-json-validation-failed)
 - [Agent says "Memtrace index is empty"](#agent-says-memtrace-index-is-empty-0-nodes-0-edges-at-session-start)
 - [Agent isn't using the MCP](#agent-isnt-using-the-mcp)
+- [Dashboard graph or timeline looks partial after cold start](#dashboard-graph-or-timeline-looks-partial-after-cold-start)
 - [`MEMTRACE_TRANSPORT=sse` hangs](#memtrace_transportsse-hangs)
 - [Indexing hangs / never finishes](#indexing-hangs--never-finishes)
 - [Indexing pulls in too much](#indexing-pulls-in-too-much--generated-code-vendored-deps-fixtures)
@@ -159,6 +161,52 @@ RUST_LOG=info memtrace start 2>&1 | head -50
 The first 50 lines almost always reveal the problem (model download
 failed, port collision, corrupt MemDB, etc.).
 
+## Run doctor first
+
+If Memtrace feels stuck, half-installed, or invisible to your agent,
+run the read-only doctor before deleting `.memdb`:
+
+```bash
+memtrace doctor
+```
+
+Doctor checks both runtime health and agent setup:
+
+- duplicate `memtrace` processes or listeners on the UI port
+- stale or invalid `.memdb/daemon.pid`, `daemon-state.json`, and
+  `~/.memtrace/runtime.json`
+- legacy launchd/systemd/Windows service artifacts from older installs
+- supported-agent skills and MCP registration paths
+
+If it reports runtime conflicts or stale state, let it repair those:
+
+```bash
+memtrace doctor --fix
+```
+
+If your agent cannot see `mcp__memtrace__*` tools, or doctor says no
+supported agent has both Memtrace skills and MCP registered, repair the
+local agent installation too:
+
+```bash
+memtrace doctor --fix --repair-install
+```
+
+That runs the same standalone installer you can invoke manually:
+
+```bash
+npx -y memtrace-skills@latest install --local
+```
+
+If doctor reports old OS-service artifacts that can respawn stale
+owners, add the legacy purge flag:
+
+```bash
+memtrace doctor --fix --purge-legacy
+```
+
+After repair, restart your AI tool so it reloads MCP configuration.
+
 ## Agent says "Memtrace index is empty (0 nodes, 0 edges)" at session start
 
 Symptom (reported by @Corpo): your agent invokes `list_indexed_repositories` as its first MCP call, gets back an empty array, and concludes "Memtrace is broken, fall back to grep". This is **almost always** an anchor mismatch, not an actually-empty index.
@@ -226,13 +274,13 @@ Look for an entry like:
 If it's missing, re-run the installer:
 
 ```bash
-memtrace install
+memtrace doctor --fix --repair-install
 ```
 
 ### Did you restart your AI tool after install?
 
-Most MCP clients only load servers at startup. After `memtrace install`,
-**fully quit and reopen** Claude Code / Cursor / etc.
+Most MCP clients only load servers at startup. After repairing the MCP
+config, **fully quit and reopen** Claude Code / Cursor / Codex / etc.
 
 ### Is there a workspace owner?
 
@@ -257,11 +305,60 @@ run `memtrace start` from the repository root.
 Memtrace ships agent skills (`memtrace-first`, `memtrace-search`, etc.)
 that nudge the agent toward MCP-first behaviour. They live at:
 
-- Claude Code: `~/.claude/skills/memtrace-skills/`
-- Cursor: `<project>/.cursor/rules/`
+- Claude Code: `~/.claude/skills/`
+- Codex: `~/.agents/skills/`
+- Cursor: `~/.cursor/skills/`
+- Windsurf: `~/.codeium/windsurf/skills/`
+- VS Code Copilot: `~/.copilot/skills/`
 
-If those directories are empty, re-run `memtrace install`. The skill
-files are part of the npm package.
+If those directories are empty, repair the local skills/MCP install:
+
+```bash
+memtrace doctor --fix --repair-install
+```
+
+## Dashboard graph or timeline looks partial after cold start
+
+Symptoms:
+
+- the dashboard initially shows a full graph, then the **All
+  repositories** view looks partial
+- individual repositories render correctly, but the combined view lags
+- the history/timeline panel says there is no history yet while replay
+  is still warming
+
+On a cold start, Memtrace may be attaching to the existing workspace
+owner, loading graph partitions, replaying git history, and writing
+embeddings in overlapping phases. During that window, a combined graph
+view can legitimately be incomplete even though per-repository views
+are already available.
+
+Check status instead of guessing:
+
+```bash
+memtrace status --json
+```
+
+Look at the `graph`, `phase2`, `auth_session`, and `recovery` fields.
+If status reports auth degradation, refresh login:
+
+```bash
+memtrace auth login
+```
+
+If status or doctor reports stale runtime state, process conflicts, or
+missing MCP setup, repair it:
+
+```bash
+memtrace doctor --fix
+memtrace doctor --fix --repair-install
+```
+
+If the combined graph is still partial after the replay/embedding
+status is successful, hard-refresh the dashboard once. If it remains
+partial, capture `memtrace status --json` and `memtrace doctor --json`
+with your issue report; those outputs include the recovery hints the UI
+uses.
 
 ## `MEMTRACE_TRANSPORT=sse` hangs
 
